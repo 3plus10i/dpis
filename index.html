@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPIS - 动态粒子图像系统</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script type="module" src="src/index.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <div class="dpis-playground">
+            <div class="image-sidebar" id="imageList"></div>
+            <div class="canvas-area">
+                <canvas id="dpis-canvas"></canvas>
+            </div>
+            <div class="controls-panel">
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>粒子半径</label>
+                        <span id="particleRadiusValue" class="value-display">2</span>
+                    </div>
+                    <input type="range" id="particleRadius" min="0.5" max="10" value="2" step="0.1">
+                </div>
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>粒子间距</label>
+                        <span id="particleSpacingValue" class="value-display">5</span>
+                    </div>
+                    <input type="range" id="particleSpacing" min="1" max="20" value="7" step="1">
+                </div>
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>斥力作用半径</label>
+                        <span id="repulsionRadiusValue" class="value-display">1800</span>
+                    </div>
+                    <input type="range" id="repulsionRadius" min="50" max="2160" value="1800" step="10">
+                </div>
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>斥力系数</label>
+                        <span id="repulsionForceValue" class="value-display">5000</span>
+                    </div>
+                    <input type="range" id="repulsionForce" min="0" max="20000" value="5000" step="100">
+                </div>
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>引力系数</label>
+                        <span id="attractionForceValue" class="value-display">50</span>
+                    </div>
+                    <input type="range" id="attractionForce" min="1" max="200" value="50" step="1">
+                </div>
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>摩擦力</label>
+                        <span id="frictionValue" class="value-display">10</span>
+                    </div>
+                    <input type="range" id="friction" min="1" max="100" value="10" step="1">
+                </div>
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>力律</label>
+                        <span id="forceLawValue" class="value-display">squareInverse 1/r^2</span>
+                    </div>
+                    <select id="forceLaw">
+                        <option value="inverse">inverse 1/r</option>
+                        <option value="logInverse">logInverse 1/(1+log(r))</option>
+                        <option value="squareInverse" selected>squareInverse 1/r^2</option>
+                        <option value="logSquareInverse">logSquareInverse 1/(1+a*log(d))^2</option>
+                        <option value="dualPower">dualPower (1+b)/(d^2+b*d)</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>外力单位作用距离 px</label>
+                        <span id="unitDistanceValue" class="value-display">30</span>
+                    </div>
+                    <input type="range" id="unitDistance" min="2" max="100" value="30" step="1">
+                </div>
+                <div class="control-item">
+                    <div class="label-row">
+                        <label>恢复力偏移角度 deg</label>
+                        <span id="offsetAngleValue" class="value-display">0</span>
+                    </div>
+                    <input type="range" id="offsetAngle" min="0" max="150" value="0" step="1">
+                </div>
+
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
