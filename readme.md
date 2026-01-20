@@ -25,39 +25,38 @@ DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是
 |------|------|--------|------|
 | `particleMass` | number | 1 | 粒子质量，影响加速度。一般不调。 |
 | `particleRadius` | number | 2 | 粒子显示半径(px) |
+| `particleInterval` | number | 10 | 粒子间距(px) |
 | `repulsionRadius` | number | 1800 | 斥力作用最大距离(px)，大点没关系 |
-| `repulsionForce` | number | 5000 | 斥力强度 |
-| `attractionForce` | number | 500 | 引力强度(恢复力系数) |
+| `unitDistance` | number | 20 | 引力或斥力的单位作用距离(px) |
+| `repulsionForce` | number | 5000 | 斥力强度(互动作用力强度) |
+| `attractionForce` | number | 600 | 引力强度(恢复力系数) |
 | `resistence` | number | 10 | 阻尼系数，与引力强度相比不应过小。 |
-| `particleInterval` | number | 10 | 粒子采样间距(px) |
 | `maxSpeed` | number | 1080 | 粒子最大速度(px/s)，防止过快。 |
 
 ### 参数模式建议
 
 更快的恢复（更硬）：
-- 增加 `attractionForce`（50 → 100）
-- 适量增加 `resistence`（10 → 20）
+- 增加 `attractionForce`
+- 适量增加 `resistence`
 
 波动的Q弹的恢复：
-- 增加 `attractionForce`（50 → 100）
-- 适量减小 `resistence`（10 → 20）
+- 增加 `attractionForce`
+- 适量减小 `resistence`
 
 光晕般的图像：
-- 增加 `particleRadius`（5~10）
-- 减小到小于粒子直径 `particleInterval`（~10）
-- 配合颜色过滤的透明度调节
+- 增加 `particleRadius`
+- 减小到小于粒子直径 `particleInterval`
+- 配合颜色过滤函数，例如保留色彩、透明度调节
 
 抽象区域点阵：
-- 大幅增大 `particleInterval`（~30）
-- 很小的 `particleRadius`（~1）
+- 大幅增大 `particleInterval`
+- 很小的 `particleRadius`
 
 ---
 
-**提示：以下内容较为复杂，如果您不需要需要理解项目原理，或深入自定义系统，则不建议继续阅读。**
-
 ## 2. 原理和模型设计
 
-### 2.1 单粒子模型 Particle
+### 2.1 单粒子模型
 
 #### 2.1.1 粒子属性
 
@@ -139,7 +138,7 @@ DPIS的核心是一群粒子。同时DPIS为粒子们提供参数配置，画布
     - **颜色过滤**：将 RGBA 转换为灰度，或进行二值化处理
     - **位置过滤**：进行非线性变形，在视觉上改变"网格"结构
 
-### 2.2.2 自定义过滤函数
+#### 2.2.1 自定义过滤函数
 
 自定义过滤函数来实现特殊效果：
 

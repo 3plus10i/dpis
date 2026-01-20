@@ -40,7 +40,7 @@ function bindEvents() {
 
 // 图片列表
 const IMAGE_LIST = [
-    '罗德岛.png', '彩虹小队.png', '莱茵生命.png','white.png','test.jpg'
+    '罗德岛.png', '彩虹小队.png', '莱茵生命.png','holo-saw.jpg','white.png'
 ];
 
 // 动态生成图片列表
@@ -200,9 +200,9 @@ function initControls() {
                 dpis.loadImage('public/罗德岛.png')
                     .catch(error => console.error('初始图片加载失败:', error));
             }
-        });
-        
+        });    
     });
+
     // 力律选择
     const valueDisplay = document.getElementById('forceLawValue');
     const currentValue = dpis['forceLaw'];

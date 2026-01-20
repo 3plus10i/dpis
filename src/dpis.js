@@ -167,12 +167,12 @@ export class DPIS {
         this.particleRadius = 2; 
         this.repulsionRadius = 1800;
         this.repulsionForce = 5000;
-        this.attractionForce = 500;
+        this.attractionForce = 600;
         this.resistence = 10;
         this.particleInterval = 10;
         this.maxSpeed = 1080;
         this.forceLaw = ForceLaw.SqureInverse; // 外力力律
-        this.unitDistance = 30; // 外力单位作用距离 px
+        this.unitDistance = 20; // 外力单位作用距离 px
         this.offsetAngle = 0; // 恢复力偏移角度 deg
         
         // 过滤函数
@@ -188,16 +188,15 @@ export class DPIS {
         this.init();
     }
     
-    // 默认激活过滤：设置最小亮度和最小透明度，过暗或过于透明处不激活
+    // 默认激活过滤：透明处不激活
     defaultFilterActivate(r, g, b, a) {
-        const brightness = (r + g + b) / 3;
-        // return brightness > 1 && a > 1;
-        return 1==1;
+        return a > 1;
     }
     
-    // 默认颜色过滤：返回灰阶颜色
+    // 默认颜色过滤：返回四级量化灰阶颜色
     defaultFilterColor(r, g, b, a) {
-        const gray = (r + g + b) / 3;
+        let gray = (r + g + b) / 3;
+        gray = Math.round(gray / 64) * 64;
         return `rgba(${gray}, ${gray}, ${gray}, ${a / 255})`;
     }
     
