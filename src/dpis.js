@@ -7,139 +7,6 @@ export class ForceLaw {
     static DualPower = 'dualPower';
 }
 
-// 粒子类 - 单粒子模型
-export class Particle {
-    constructor(originalX, originalY) {
-        // 原始位置O
-        this.originalX = originalX;
-        this.originalY = originalY;
-        
-        // 当前位置P
-        this.x = originalX;
-        this.y = originalY;
-        
-        // 速度v
-        this.vx = 0;
-        this.vy = 0;
-        this.maxSpeed = 1080;
-        
-        // 粒子属性
-        this.mass = 1;
-        this.color = '#888888';
-        this.radius = 1;
-        this.activated = false;
-
-        // 力场相关
-        this.forceLaw = ForceLaw.SqureInverse; // 外力力律
-        this.unitDistance = 30; // 外力单位作用距离 px
-        this.offsetAngle = 0; // 恢复力偏移角度 deg
-    }
-    
-    // 计算受力 F = 恢复力+外力+阻力
-    calculateForce(dpisConfig) {
-        const {repulsionRadius, repulsionForce, attractionForce, resistence } = dpisConfig;
-
-        let { mouseX, mouseY } = dpisConfig;
-
-        if (mouseX === null ) { mouseX = repulsionRadius+1;}
-        if (mouseY === null ) { mouseY = repulsionRadius+1;}
-        
-        let fx = 0;
-        let fy = 0;
-        
-        // 1. 线性恢复力 g(r) = - kg * r
-        // g = - kg * r/ud  *  (rx, ry) / r 
-        const rx = this.x - this.originalX;
-        const ry = this.y - this.originalY;
-        const r = Math.sqrt(rx * rx + ry * ry);
-        const theta = this.offsetAngle * Math.PI/180;
-        const rx_rot = rx * Math.cos(theta) - ry * Math.sin(theta);
-        const ry_rot = rx * Math.sin(theta) + ry * Math.cos(theta);
-        
-        fx += -attractionForce * Math.pow(r/this.unitDistance, 1) * rx_rot / r;
-        fy += -attractionForce * Math.pow(r/this.unitDistance, 1) * ry_rot / r;
-        
-        
-        // 2. 外力
-        // f = kf * function  *  (dx,dy) / d
-        const dx = this.x - mouseX;
-        const dy = this.y - mouseY;
-        const d = Math.sqrt(dx * dx + dy * dy);
-        
-        if (d < repulsionRadius) {
-            const ud = Math.max(d/this.unitDistance, 1);
-            let forceMagnitude = 0;
-            switch (this.forceLaw) {
-                case ForceLaw.Inverse: // 反比
-                    forceMagnitude = 1 / ud;
-                    break;
-                case ForceLaw.LogInverse: // 对数反比
-                    forceMagnitude = 1 / (1+3*Math.log(ud));
-                    break;
-                case ForceLaw.SqureInverse: // 平方反比
-                    forceMagnitude = 1 / Math.pow(ud, 2);
-                    break;
-                case ForceLaw.LogSqureInverse: // 对数平方反比
-                    forceMagnitude = 1 / Math.pow(1+1*Math.log(ud), 2);
-                    break;
-                case ForceLaw.DualPower: // 双幂律
-                    forceMagnitude = 4 / (ud*(ud+3));
-                    break;
-                default: // 默认平方反比
-                    forceMagnitude = 1 / Math.pow(ud, 2);
-                    break;
-            }
-            
-            fx += repulsionForce * forceMagnitude * dx / d;
-            fy += repulsionForce * forceMagnitude * dy / d;
-        }
-        
-        // 3. 阻力 h(v) = - kh * v
-        // 阻力相比于恢复力不能太小，否则会进入震荡。
-        fx += -resistence * this.vx;
-        fy += -resistence * this.vy;
-        
-        return { fx, fy };
-    }
-    
-    // 更新粒子速度和位置
-    // dtSeconds 单位：秒
-    update(dpisConfig, dtSeconds) {
-        if (!this.activated) return;
-        
-        // 计算受力
-        const { fx, fy } = this.calculateForce(dpisConfig);
-
-        const old_vx = this.vx;
-        const old_vy = this.vy;
-        
-        // 速度更新: v = v + F / m * dt
-        this.vx += fx / this.mass * dtSeconds;
-        this.vy += fy / this.mass * dtSeconds;
-        
-        // 速度限幅
-        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        if (speed > this.maxSpeed) {
-            this.vx = (this.vx / speed) * this.maxSpeed;
-            this.vy = (this.vy / speed) * this.maxSpeed;
-        }
-        
-        // 位置更新: P = P + v_avg * dt
-        this.x += (this.vx + old_vx) / 2 * dtSeconds;
-        this.y += (this.vy + old_vy) / 2 * dtSeconds;
-    }
-    
-    // 绘制粒子
-    draw(ctx) {
-        if (!this.activated) return;
-        
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
 // 动态粒子图像系统 - DPIS
 export class DPIS {
     constructor(canvasId) {
@@ -164,14 +31,14 @@ export class DPIS {
         
         // 系统参数 - dpisConfig
         this.particleMass = 1;
-        this.particleRadius = 2; 
+        this.particleRadius = 1.5; 
+        this.particleInterval = 10;
         this.repulsionRadius = 1800;
         this.repulsionForce = 5000;
-        this.attractionForce = 600;
-        this.resistence = 10;
-        this.particleInterval = 10;
+        this.attractionForce = 500;
+        this.resistence = 15;
         this.maxSpeed = 1080;
-        this.forceLaw = ForceLaw.SqureInverse; // 外力力律
+        this.forceLaw = ForceLaw.Inverse; // 外力力律
         this.unitDistance = 20; // 外力单位作用距离 px
         this.offsetAngle = 0; // 恢复力偏移角度 deg
         
@@ -186,6 +53,7 @@ export class DPIS {
         
         // 初始化
         this.init();
+        this._bindEvents();
     }
     
     // 默认激活过滤：透明处不激活
@@ -193,11 +61,11 @@ export class DPIS {
         return a > 1;
     }
     
-    // 默认颜色过滤：返回四级量化灰阶颜色
+    // 默认颜色过滤：二值化量化灰阶
     defaultFilterColor(r, g, b, a) {
         let gray = (r + g + b) / 3;
-        gray = Math.round(gray / 64) * 64;
-        return `rgba(${gray}, ${gray}, ${gray}, ${a / 255})`;
+        gray = gray > 128 ? 223 : 64;
+        return `rgba(${gray}, ${gray}, ${gray}, 1)`;
     }
     
     // 默认位置过滤：返回原始位置
@@ -205,7 +73,7 @@ export class DPIS {
         return { x, y };
     }
 
-    // 更新系统参数
+    // 更新系统参数，主要用于前端监听实时调整
     updateConfig(config) {
         Object.assign(this, config);
         
@@ -221,15 +89,11 @@ export class DPIS {
         
     }
 
-    getDpisConfig() {
-        // mouseX, mouseY, repulsionRadius, repulsionForce, attractionForce, resistence, maxSpeed, forceLaw, unitDistance, offsetAngle
+    getDpisState() {
+        // mouseX, mouseY, repulsionRadius, repulsionForce, attractionForce, resistence
         return {
             mouseX: this.mouseX,
             mouseY: this.mouseY,
-
-            particleRadius: this.particleRadius,
-            particleMass: this.particleMass,
-
             repulsionRadius: this.repulsionRadius,
             repulsionForce: this.repulsionForce,
             resistence: this.resistence,
@@ -241,6 +105,38 @@ export class DPIS {
     updateMousePosition(x, y) {
         this.mouseX = x;
         this.mouseY = y;
+    }
+
+    // 绑定鼠标和触摸事件
+    _bindEvents() {
+        // 鼠标移动事件
+        document.addEventListener('mousemove', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            this.updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
+        });
+        
+        // 触摸事件 - 仅在画布区域响应，避免干扰页面滚动
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            this.updateMousePosition(touch.clientX - rect.left, touch.clientY - rect.top);
+        }, { passive: false });
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            this.updateMousePosition(touch.clientX - rect.left, touch.clientY - rect.top);
+        }, { passive: false });
+
+        // 停止触摸事件
+        this.canvas.addEventListener('touchend', () => {
+            this.updateMousePosition(null, null);
+        });
+        this.canvas.addEventListener('touchcancel', () => {
+            this.updateMousePosition(null, null);
+        });
     }
     
     // 初始化系统
@@ -432,9 +328,9 @@ export class DPIS {
     
     // 更新系统
     update(dtSeconds) {
-        // 更新所有粒子
+        // 更新所有粒子状态
         this.particles.forEach(particle => {
-            particle.update(this.getDpisConfig(), dtSeconds);
+            particle.update(this.getDpisState(), dtSeconds);
         });
     }
     
@@ -479,4 +375,138 @@ export class DPIS {
         requestAnimationFrame((time) => this.animate(time));
     }
     
+}
+
+
+// 粒子类 - 单粒子模型
+export class Particle {
+    constructor(originalX, originalY) {
+        // 原始位置O
+        this.originalX = originalX;
+        this.originalY = originalY;
+        
+        // 当前位置P
+        this.x = originalX;
+        this.y = originalY;
+        
+        // 速度v
+        this.vx = 0;
+        this.vy = 0;
+        this.maxSpeed = 1080;
+        
+        // 粒子属性
+        this.mass = 1;
+        this.color = '#888888';
+        this.radius = 1;
+        this.activated = false;
+
+        // 力场相关
+        this.forceLaw = ForceLaw.SqureInverse; // 外力力律
+        this.unitDistance = 30; // 外力单位作用距离 px
+        this.offsetAngle = 0; // 恢复力偏移角度 deg
+    }
+    
+    // 计算受力 F = 恢复力+外力+阻力
+    calculateForce(dpisConfig) {
+        const {repulsionRadius, repulsionForce, attractionForce, resistence } = dpisConfig;
+
+        let { mouseX, mouseY } = dpisConfig;
+
+        if (mouseX === null ) { mouseX = repulsionRadius+1;}
+        if (mouseY === null ) { mouseY = repulsionRadius+1;}
+        
+        let fx = 0;
+        let fy = 0;
+        
+        // 1. 线性恢复力 g(r) = - kg * r
+        // g = - kg * r/ud  *  (rx, ry) / r 
+        const rx = this.x - this.originalX;
+        const ry = this.y - this.originalY;
+        const r = Math.sqrt(rx * rx + ry * ry);
+        const theta = this.offsetAngle * Math.PI/180;
+        const rx_rot = rx * Math.cos(theta) - ry * Math.sin(theta);
+        const ry_rot = rx * Math.sin(theta) + ry * Math.cos(theta);
+        
+        fx += -attractionForce * Math.pow(r/this.unitDistance, 1) * rx_rot / r;
+        fy += -attractionForce * Math.pow(r/this.unitDistance, 1) * ry_rot / r;
+        
+        
+        // 2. 外力
+        // f = kf * function  *  (dx,dy) / d
+        const dx = this.x - mouseX;
+        const dy = this.y - mouseY;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        
+        if (d < repulsionRadius) {
+            const ud = Math.max(d/this.unitDistance, 1);
+            let forceMagnitude = 0;
+            switch (this.forceLaw) {
+                case ForceLaw.Inverse: // 反比
+                    forceMagnitude = 1 / ud;
+                    break;
+                case ForceLaw.LogInverse: // 对数反比
+                    forceMagnitude = 1 / (1+3*Math.log(ud));
+                    break;
+                case ForceLaw.SqureInverse: // 平方反比
+                    forceMagnitude = 1 / Math.pow(ud, 2);
+                    break;
+                case ForceLaw.LogSqureInverse: // 对数平方反比
+                    forceMagnitude = 1 / Math.pow(1+1*Math.log(ud), 2);
+                    break;
+                case ForceLaw.DualPower: // 双幂律
+                    forceMagnitude = 4 / (ud*(ud+3));
+                    break;
+                default: // 默认平方反比
+                    forceMagnitude = 1 / Math.pow(ud, 2);
+                    break;
+            }
+            
+            fx += repulsionForce * forceMagnitude * dx / d;
+            fy += repulsionForce * forceMagnitude * dy / d;
+        }
+        
+        // 3. 阻力 h(v) = - kh * v
+        // 阻力相比于恢复力不能太小，否则会进入震荡。
+        fx += -resistence * this.vx;
+        fy += -resistence * this.vy;
+        
+        return { fx, fy };
+    }
+    
+    // 更新粒子速度和位置
+    // dtSeconds 单位：秒
+    update(dpisConfig, dtSeconds) {
+        if (!this.activated) return;
+        
+        // 计算受力
+        const { fx, fy } = this.calculateForce(dpisConfig);
+
+        const old_vx = this.vx;
+        const old_vy = this.vy;
+        
+        // 速度更新: v = v + F / m * dt
+        this.vx += fx / this.mass * dtSeconds;
+        this.vy += fy / this.mass * dtSeconds;
+        
+        // 速度限幅
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (speed > this.maxSpeed) {
+            this.vx = (this.vx / speed) * this.maxSpeed;
+            this.vy = (this.vy / speed) * this.maxSpeed;
+        }
+        
+        // 位置更新: P = P + v_avg * dt
+        this.x += (this.vx + old_vx) / 2 * dtSeconds;
+        this.y += (this.vy + old_vy) / 2 * dtSeconds;
+    }
+    
+    // 绘制粒子
+    draw(ctx) {
+        if (!this.activated) return;
+        
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
 }

@@ -4,44 +4,13 @@ import { DPIS } from './dpis.js';
 const canvasId = 'dpis-canvas';
 const dpis = new DPIS(canvasId);
 
-// 初始化交互事件
-function bindEvents() {
-    const canvas = document.getElementById(canvasId);
-
-    // 鼠标移动事件
-    document.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        dpis.updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
-    });
-    
-    // 触摸事件 - 仅在画布区域响应，避免干扰页面滚动
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        dpis.updateMousePosition(touch.clientX - rect.left, touch.clientY - rect.top);
-    }, { passive: false });
-    
-    canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        dpis.updateMousePosition(touch.clientX - rect.left, touch.clientY - rect.top);
-    }, { passive: false });
-
-    // 停止触摸事件
-    canvas.addEventListener('touchend', () => {
-        dpis.updateMousePosition(null, null);
-    });
-    canvas.addEventListener('touchcancel', () => {
-        dpis.updateMousePosition(null, null);
-    });
-}
-
-// 图片列表
+// 示例图片列表
 const IMAGE_LIST = [
-    '罗德岛.png', '彩虹小队.png', '莱茵生命.png','holo-saw.jpg','white.png'
+    'rhodes_island.png', 'rhodes_island2.png','rainbow6.png', 'rhinelab.png','holo-saw.jpg','white.png',
+    'kroos.png','MTL_SL_G2.png'
 ];
+
+const DEFAULT_IMAGE = IMAGE_LIST[0];
 
 // 动态生成图片列表
 function renderImageList() {
@@ -139,7 +108,6 @@ function addImageToList(name, src) {
     newItem.appendChild(img);
     newItem.appendChild(span);
     
-    // 插入到上传按钮后面
     if (uploadItem.nextSibling) {
         imageListContainer.insertBefore(newItem, uploadItem.nextSibling);
     } else {
@@ -197,7 +165,7 @@ function initControls() {
             if (control.configName === 'particleInterval') {
                 // 调整间距后，总粒子数量需要改变
                 dpis.init();
-                dpis.loadImage('public/罗德岛.png')
+                dpis.loadImage(`public/${DEFAULT_IMAGE}`)
                     .catch(error => console.error('初始图片加载失败:', error));
             }
         });    
@@ -239,11 +207,11 @@ function debounce(fn, delay) {
 function initPage() {
     renderImageList();
     initControls();
-    bindEvents();
+
     
     // 初始加载罗德岛.png
     window.addEventListener('load', () => {
-        dpis.loadImage('public/罗德岛.png')
+        dpis.loadImage(`public/${DEFAULT_IMAGE}`)
             .catch(error => console.error('初始图片加载失败:', error));
     });
 
