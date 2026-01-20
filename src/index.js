@@ -6,7 +6,7 @@ const dpis = new DPIS(canvasId);
 
 // 示例图片列表
 const IMAGE_LIST = [
-    'rhodes_island.png', 'rhodes_island2.png','rainbow6.png', 'rhinelab.png','holo-saw.jpg','white.png',
+    'rhodes_island.png', 'rhodes_island2.png','rainbow6.png', 'rhinelab.png','white.png',
     'kroos.png','MTL_SL_G2.png'
 ];
 
@@ -134,7 +134,6 @@ function initControls() {
         { id: 'resistence', configName: 'resistence', valueId: 'frictionValue' },
         { id: 'attractionForce', configName: 'attractionForce', valueId: 'attractionForceValue' },
         { id: 'particleInterval', configName: 'particleInterval', valueId: 'particleSpacingValue' },
-        { id: 'unitDistance', configName: 'unitDistance', valueId: 'unitDistanceValue' },
         { id: 'offsetAngle', configName: 'offsetAngle', valueId: 'offsetAngleValue' },
     ];
     
@@ -163,7 +162,7 @@ function initControls() {
             config[control.configName] = value;
             dpis.updateConfig(config);
             if (control.configName === 'particleInterval') {
-                // 调整间距后，总粒子数量需要改变
+                // 调整间距后，总粒子数量会改变
                 dpis.init();
                 dpis.loadImage(`public/${DEFAULT_IMAGE}`)
                     .catch(error => console.error('初始图片加载失败:', error));
@@ -218,9 +217,12 @@ function initPage() {
     // 监听窗口大小变化（增加防抖）
     const handleResize = debounce(() => {
         dpis.init();
-        // 如果当前有图片，则重新加载
-        if (dpis.image) {
+        // 有限重新加载既有图片
+        if (dpis.image && dpis.image.src) {
             dpis.loadImage(dpis.image.src)
+                .catch(error => console.error('窗口调整后图片加载失败:', error));
+        } else {
+            dpis.loadImage(`public/${DEFAULT_IMAGE}`)
                 .catch(error => console.error('窗口调整后图片加载失败:', error));
         }
     }, 250);

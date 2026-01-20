@@ -2,8 +2,8 @@
 export class ForceLaw {
     static Inverse = 'inverse';
     static LogInverse = 'logInverse';
-    static SqureInverse = 'squareInverse';
-    static LogSqureInverse = 'logSquareInverse';
+    static SquareInverse = 'squareInverse';
+    static LogSquareInverse = 'logSquareInverse';
     static DualPower = 'dualPower';
 }
 
@@ -257,10 +257,9 @@ export class DPIS {
         const offsetY = (this.canvas.height - imgHeight) / 2;
 
         // 准备粒子列表：将激活的粒子放在前面，未激活的粒子放在后面，且随机打乱顺序
-        let activatedIndex = this.getActivatedParticleIndex();
-        let unactivatedIndex = this.getUnactivatedParticleIndex();
-        activatedIndex.sort(() => Math.random() - 0.5);
-        unactivatedIndex.sort(() => Math.random() - 0.5);
+        let activatedIndex = [];
+        let unactivatedIndex = [];
+        ({activatedIndex, unactivatedIndex} = this.getAorUaParticleIndex());
         const particleIndexList = [...activatedIndex, ...unactivatedIndex];
         
         // 根据粒子间距在图片（而非画布）上进行网格采样，并将采样结果赋予粒子
@@ -316,14 +315,27 @@ export class DPIS {
         }
     }
 
-    // 返回激活的粒子索引
-    getActivatedParticleIndex() {
-        return this.particles.filter(particle => particle.activated).map(particle => this.particles.indexOf(particle));
-    }
-
-    // 返回未激活的粒子索引
-    getUnactivatedParticleIndex() {
-        return this.particles.filter(particle => !particle.activated).map(particle => this.particles.indexOf(particle));
+    // 分别返回激活和未激活的粒子, 并打乱顺序
+    getAorUaParticleIndex() {
+        let activatedIndex = [];
+        let unactivatedIndex = [];
+        for (let i = 0; i < this.particles.length; i++) {
+            if (this.particles[i].activated) {
+                activatedIndex.push(i);
+            } else {
+                unactivatedIndex.push(i);
+            }
+        }
+        // 洗牌算法
+        let shuffleFunc = (arr) => {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+        shuffleFunc(activatedIndex);
+        shuffleFunc(unactivatedIndex);
+        return { activatedIndex, unactivatedIndex };
     }
     
     // 更新系统
@@ -401,7 +413,7 @@ export class Particle {
         this.activated = false;
 
         // 力场相关
-        this.forceLaw = ForceLaw.SqureInverse; // 外力力律
+        this.forceLaw = ForceLaw.Inverse; // 外力力律
         this.unitDistance = 30; // 外力单位作用距离 px
         this.offsetAngle = 0; // 恢复力偏移角度 deg
     }
@@ -447,10 +459,10 @@ export class Particle {
                 case ForceLaw.LogInverse: // 对数反比
                     forceMagnitude = 1 / (1+3*Math.log(ud));
                     break;
-                case ForceLaw.SqureInverse: // 平方反比
+                case ForceLaw.SquareInverse: // 平方反比
                     forceMagnitude = 1 / Math.pow(ud, 2);
                     break;
-                case ForceLaw.LogSqureInverse: // 对数平方反比
+                case ForceLaw.LogSquareInverse: // 对数平方反比
                     forceMagnitude = 1 / Math.pow(1+1*Math.log(ud), 2);
                     break;
                 case ForceLaw.DualPower: // 双幂律
