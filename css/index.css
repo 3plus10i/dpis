@@ -1,8 +1,8 @@
 :root {
     --bg-color: #0F0F0F;
     --bg-color-rgb: 15, 15, 15;
-    --sidebar-bg: #1A1A1A;
-    --sidebar-bg-rgb: 26, 26, 26;
+    --image-list-bg: #1A1A1A;
+    --image-list-bg-rgb: 26, 26, 26;
     --text-color: #FFFFFF;
     --text-color-rgb: 255, 255, 255;
     --text-secondary: #ABABAB;
@@ -36,15 +36,93 @@ body {
     width: 100vw;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 20px;
 }
 
+/* 标题样式 */
+.app-header {
+    width: 100%;
+    max-width: 95vw;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.app-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--text-color);
+    text-shadow: 0 0 10px rgba(var(--particle-light-rgb), 0.3);
+}
+
+.app-title span {
+    font-size: 20px;
+    font-weight: 400;
+}
+
+.title-sub {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    /* margin-left: 10px; */
+}
+
+/* 导航链接样式 */
+.header-links {
+    display: flex;
+    gap: 20px;
+    white-space: nowrap;
+    align-items: stretch;
+    margin-right: 20px;
+}
+
+.header-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    padding: 4px 8px;
+    background-color: rgba(var(--text-secondary-rgb), 0.1);
+    border-radius: 8px;
+}
+
+.header-link img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    display: block;
+    border-radius: 4px;
+}
+
+.header-link:hover {
+    color: var(--particle-light);
+    background: rgba(var(--particle-light-rgb), 0.1);
+}
+
+.header-line {
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--particle-light), transparent);
+    margin-top: 8px;
+    opacity: 0.6;
+}
+
 /* 粒子组件 */
 .dpis-playground {
     width: 100%;
-    height: 100%;
+    max-width: 95vw;
+    flex: 1; /* 占据剩余空间 */
     display: flex;
     background: var(--component-bg);
     background-image: url('../public/cross200xl.png');
@@ -56,10 +134,10 @@ body {
     border: 1px solid var(--border-color);
 }
 
-/* 图片侧边栏 */
-.image-sidebar {
+/* 图片栏 */
+.image-list {
     width: 200px;
-    background: rgba(var(--sidebar-bg-rgb), 0.8);
+    background: rgba(var(--image-list-bg-rgb), 0.8);
     border-right: 1px solid var(--border-color);
     overflow-y: auto;
     padding: 15px;
@@ -87,7 +165,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.sidebar-image {
+.demo-image {
     width: 100%;
     height: 120px;
     object-fit: contain;
@@ -100,6 +178,31 @@ body {
     font-size: 13px;
     color: var(--text-secondary);
     text-align: center;
+}
+
+/* 上传项特定样式 */
+.upload-item {
+    border: 2px dashed var(--border-color);
+    background: transparent;
+    justify-content: center;
+    min-height: 150px;
+}
+
+.upload-item:hover {
+    border-color: var(--particle-light);
+    color: var(--particle-light);
+    background: rgba(var(--particle-light-rgb), 0.05);
+}
+
+.upload-icon {
+    font-size: 40px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    transition: color 0.2s ease;
+}
+
+.upload-item:hover .upload-icon {
+    color: var(--particle-light);
 }
 
 /* 画布区域 */
@@ -116,15 +219,16 @@ body {
 #dpis-canvas {
     background: rgba(var(--component-bg-rgb), 0.8);
     border-radius: 4px;
-    box-shadow: 0 0 20px rgba(24, 209, 255, 0.1);
+    box-shadow: 0 0 20px rgba(var(--particle-light-rgb), 0.1);
     max-width: 100%;
     max-height: 100%;
+    touch-action: none; /* 禁用画布上的默认触摸行为，如缩放和滚动 */
 }
 
 /* 控制面板 */
 .controls-panel {
     width: 250px;
-    background: rgba(var(--sidebar-bg-rgb), 0.8);
+    background: rgba(var(--image-list-bg-rgb), 0.8);
     border-left: 1px solid var(--border-color);
     overflow-y: auto;
     padding: 20px;
@@ -166,6 +270,40 @@ body {
     text-align: center;
 }
 
+/* 下拉选择框样式 */
+select {
+    width: 100%;
+    padding: 8px 12px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    appearance: none; /* 移除默认箭头 */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2318D1FF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    transition: all 0.2s ease;
+}
+
+select:hover {
+    border-color: var(--particle-light);
+    background-color: var(--hover-bg);
+}
+
+select:focus {
+    border-color: var(--particle-light);
+    box-shadow: 0 0 0 2px rgba(24, 209, 255, 0.2);
+}
+
+select option {
+    background-color: var(--sidebar-bg);
+    color: var(--text-color);
+    padding: 8px;
+}
+
 /* 滑块样式 */
 input[type="range"] {
     width: 100%;
@@ -185,12 +323,11 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 0 8px rgba(24, 209, 255, 0.4);
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.2);
-    box-shadow: 0 0 12px rgba(24, 209, 255, 0.6);
+    box-shadow: 0 0 12px rgba(var(--particle-light-rgb), 0.6);
 }
 
 input[type="range"]::-moz-range-thumb {
@@ -201,34 +338,105 @@ input[type="range"]::-moz-range-thumb {
     cursor: pointer;
     border: none;
     transition: all 0.2s ease;
-    box-shadow: 0 0 8px rgba(24, 209, 255, 0.4);
+    box-shadow: 0 0 8px rgba(var(--particle-light-rgb), 0.4);
 }
 
 input[type="range"]::-moz-range-thumb:hover {
     transform: scale(1.2);
-    box-shadow: 0 0 12px rgba(24, 209, 255, 0.6);
+    box-shadow: 0 0 12px rgba(var(--particle-light-rgb), 0.6);
 }
 
-/* 滚动条样式 */
-.image-sidebar::-webkit-scrollbar,
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 10px;
+    }
+
+    .app-title {
+        font-size: 20px;
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+
+    .app-title span {
+        font-size: 10px;
+        font-weight: 200;
+    }
+
+    .dpis-playground {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .image-list, .controls-panel {
+        width: 100%;
+        height: auto;
+        max-height: 300px;
+        border: none;
+        background: rgba(var(--image-list-bg-rgb), 0.9);
+    }
+
+    .image-list {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px;
+        min-height: 125px;
+    }
+
+    .upload-item {
+        min-height: auto;
+    }
+
+    .image-item {
+        min-width: 100px;
+        flex-shrink: 0;
+    }
+
+    .demo-image {
+        height: 60px;
+    }
+
+    .canvas-area {
+        padding: 10px;
+        min-height: 300px;
+    }
+
+    .controls-panel {
+        border-top: 1px solid var(--border-color);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        width: 24px;
+        height: 24px;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+        width: 24px;
+        height: 24px;
+    }
+}
+.image-list::-webkit-scrollbar,
 .controls-panel::-webkit-scrollbar {
-    width: 6px;
+    width: 3px;
+    height: 3px;
 }
 
-.image-sidebar::-webkit-scrollbar-track,
+.image-list::-webkit-scrollbar-track,
 .controls-panel::-webkit-scrollbar-track {
     background: var(--bg-color);
     border-radius: 3px;
 }
 
-.image-sidebar::-webkit-scrollbar-thumb,
+.image-list::-webkit-scrollbar-thumb,
 .controls-panel::-webkit-scrollbar-thumb {
     background: var(--border-color);
     border-radius: 3px;
     transition: background 0.2s ease;
 }
 
-.image-sidebar::-webkit-scrollbar-thumb:hover,
+.image-list::-webkit-scrollbar-thumb:hover,
 .controls-panel::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
 }

@@ -7,8 +7,6 @@ const dpis = new DPIS(canvasId);
 // 初始化交互事件
 function bindEvents() {
     const canvas = document.getElementById(canvasId);
-    
-    // 这里绑定到document，则可以在canvas外部也能触发事件
 
     // 鼠标移动事件
     document.addEventListener('mousemove', (e) => {
@@ -16,15 +14,15 @@ function bindEvents() {
         dpis.updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
     });
     
-    // 触摸事件
-    document.addEventListener('touchstart', (e) => {
+    // 触摸事件 - 仅在画布区域响应，避免干扰页面滚动
+    canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
         dpis.updateMousePosition(touch.clientX - rect.left, touch.clientY - rect.top);
     }, { passive: false });
     
-    document.addEventListener('touchmove', (e) => {
+    canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
@@ -32,47 +30,129 @@ function bindEvents() {
     }, { passive: false });
 
     // 停止触摸事件
-    document.addEventListener('touchend', () => {
+    canvas.addEventListener('touchend', () => {
+        dpis.updateMousePosition(null, null);
+    });
+    canvas.addEventListener('touchcancel', () => {
         dpis.updateMousePosition(null, null);
     });
 }
 
 // 图片列表
 const IMAGE_LIST = [
-    '罗德岛.png', '巴别塔.png', '彩虹小队.png', '企鹅物流.png', '莱茵生命.png'
+    '罗德岛.png', '彩虹小队.png', '莱茵生命.png','white.png','test.jpg'
 ];
 
 // 动态生成图片列表
 function renderImageList() {
     const imageListContainer = document.getElementById('imageList');
+    imageListContainer.innerHTML = ''; // 清空列表
+
+    // 1. 创建上传按钮项
+    const uploadItem = document.createElement('div');
+    uploadItem.className = 'image-item upload-item';
+    uploadItem.innerHTML = `
+        <div class="upload-icon">+</div>
+        <span class="image-name">上传图片</span>
+        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+    `;
+    
+    const fileInput = uploadItem.querySelector('#imageUpload');
+    
+    // 点击项触发隐藏的 file input
+    uploadItem.addEventListener('click', () => fileInput.click());
+    
+    // 处理文件选择
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const dataUrl = event.target.result;
+                // 加载到 dpis
+                dpis.loadImage(dataUrl)
+                    .then(() => {
+                        // 上传成功后，将图片临时添加到列表（如果尚未在列表中）
+                        addImageToList(file.name, dataUrl);
+                    })
+                    .catch(error => {
+                        console.error('图片加载失败:', error);
+                        alert('图片加载失败: ' + error.message);
+                    });
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    imageListContainer.appendChild(uploadItem);
     
     IMAGE_LIST.forEach(name => {
-        const imageItem = document.createElement('div');
-        imageItem.className = 'image-item';
-        
-        const img = document.createElement('img');
-        img.src = `public/${name}`;
-        img.alt = name;
-        img.className = 'sidebar-image';
-        img.dataset.src = `public/${name}`;
-        
-        const span = document.createElement('span');
-        span.className = 'image-name';
-        span.textContent = name;
-        
-        imageItem.appendChild(img);
-        imageItem.appendChild(span);
-        imageListContainer.appendChild(imageItem);
-        
-        // 绑定点击事件
-        imageItem.addEventListener('click', () => {
-            const imageSrc = `public/${name}`;
-            dpis.loadImage(imageSrc)
-                .catch(error => {
-                    console.error('图片加载失败:', error);
-                    alert('图片加载失败: ' + error.message);
-                });
-        });
+        createImageItem(name, `public/${name}`, imageListContainer);
+    });
+}
+
+// 创建并添加图片项到列表
+function createImageItem(name, src, container) {
+    const imageItem = document.createElement('div');
+    imageItem.className = 'image-item';
+    
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = name;
+    img.className = 'demo-image';
+    
+    const span = document.createElement('span');
+    span.className = 'image-name';
+    span.textContent = name;
+    
+    imageItem.appendChild(img);
+    imageItem.appendChild(span);
+    container.appendChild(imageItem);
+    
+    // 绑定点击事件
+    imageItem.addEventListener('click', () => {
+        dpis.loadImage(src)
+            .catch(error => {
+                console.error('图片加载失败:', error);
+                alert('图片加载失败: ' + error.message);
+            });
+    });
+}
+
+// 辅助函数：将新图片添加到列表显示
+function addImageToList(name, src) {
+    const imageListContainer = document.getElementById('imageList');
+    // 在上传按钮之后插入新图片
+    const uploadItem = imageListContainer.querySelector('.upload-item');
+    const newItem = document.createElement('div');
+    newItem.className = 'image-item';
+    
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = name;
+    img.className = 'demo-image';
+    
+    const span = document.createElement('span');
+    span.className = 'image-name';
+    span.textContent = name;
+    
+    newItem.appendChild(img);
+    newItem.appendChild(span);
+    
+    // 插入到上传按钮后面
+    if (uploadItem.nextSibling) {
+        imageListContainer.insertBefore(newItem, uploadItem.nextSibling);
+    } else {
+        imageListContainer.appendChild(newItem);
+    }
+    
+    // 绑定点击事件
+    newItem.addEventListener('click', () => {
+        dpis.loadImage(src)
+            .catch(error => {
+                console.error('图片加载失败:', error);
+                alert('图片加载失败: ' + error.message);
+            });
     });
 }
 
@@ -81,10 +161,11 @@ function initControls() {
     const controls = [
         { id: 'particleRadius', configName: 'particleRadius', valueId: 'particleRadiusValue' },
         { id: 'repulsionRadius', configName: 'repulsionRadius', valueId: 'repulsionRadiusValue' },
+        { id: 'unitDistance', configName: 'unitDistance', valueId: 'unitDistanceValue' },
         { id: 'repulsionForce', configName: 'repulsionForce', valueId: 'repulsionForceValue' },
-        { id: 'friction', configName: 'resistence', valueId: 'frictionValue' },
+        { id: 'resistence', configName: 'resistence', valueId: 'frictionValue' },
         { id: 'attractionForce', configName: 'attractionForce', valueId: 'attractionForceValue' },
-        { id: 'particleSpacing', configName: 'particleInterval', valueId: 'particleSpacingValue' },
+        { id: 'particleInterval', configName: 'particleInterval', valueId: 'particleSpacingValue' },
         { id: 'unitDistance', configName: 'unitDistance', valueId: 'unitDistanceValue' },
         { id: 'offsetAngle', configName: 'offsetAngle', valueId: 'offsetAngleValue' },
     ];
@@ -104,7 +185,7 @@ function initControls() {
             valueDisplay.textContent = currentValue;
         }
         
-        // range输入框事件
+        // range输入条事件
         rangeInput.addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
             if (valueDisplay) {
@@ -114,6 +195,8 @@ function initControls() {
             config[control.configName] = value;
             dpis.updateConfig(config);
             if (control.configName === 'particleInterval') {
+                // 调整间距后，总粒子数量需要改变
+                dpis.init();
                 dpis.loadImage('public/罗德岛.png')
                     .catch(error => console.error('初始图片加载失败:', error));
             }
@@ -141,6 +224,17 @@ function initControls() {
 }
 
 
+// 防抖函数
+function debounce(fn, delay) {
+    let timer = null;
+    return function() {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+            fn.apply(this, arguments);
+        }, delay);
+    };
+}
+
 // 初始化页面
 function initPage() {
     renderImageList();
@@ -153,13 +247,17 @@ function initPage() {
             .catch(error => console.error('初始图片加载失败:', error));
     });
 
-    // 监听窗口大小变化
-    window.addEventListener('resize', () => {
-        dpis.init('dpis-canvas');
-        // 重新加载当前图片
-        dpis.loadImage('public/罗德岛.png')
-            .catch(error => console.error('初始图片加载失败:', error));
-    });
+    // 监听窗口大小变化（增加防抖）
+    const handleResize = debounce(() => {
+        dpis.init();
+        // 如果当前有图片，则重新加载
+        if (dpis.image) {
+            dpis.loadImage(dpis.image.src)
+                .catch(error => console.error('窗口调整后图片加载失败:', error));
+        }
+    }, 250);
+
+    window.addEventListener('resize', handleResize);
 }
 
 // 启动应用

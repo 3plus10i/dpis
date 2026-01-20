@@ -32,7 +32,7 @@ export class Particle {
         // 力场相关
         this.forceLaw = ForceLaw.SqureInverse; // 外力力律
         this.unitDistance = 30; // 外力单位作用距离 px
-        this.offsetAngle = 30; // 恢复力偏移角度 deg
+        this.offsetAngle = 0; // 恢复力偏移角度 deg
     }
     
     // 计算受力 F = 恢复力+外力+阻力
@@ -48,18 +48,16 @@ export class Particle {
         let fy = 0;
         
         // 1. 线性恢复力 g(r) = - kg * r
-        // g = - kg * r  *  (rx, ry) / r 
+        // g = - kg * r/ud  *  (rx, ry) / r 
         const rx = this.x - this.originalX;
         const ry = this.y - this.originalY;
         const r = Math.sqrt(rx * rx + ry * ry);
-        // 如果让恢复力稍微旋转一个小角度呢？
         const theta = this.offsetAngle * Math.PI/180;
         const rx_rot = rx * Math.cos(theta) - ry * Math.sin(theta);
         const ry_rot = rx * Math.sin(theta) + ry * Math.cos(theta);
-
         
-        fx += -attractionForce * rx_rot;
-        fy += -attractionForce * ry_rot;
+        fx += -attractionForce * Math.pow(r/this.unitDistance, 1) * rx_rot / r;
+        fy += -attractionForce * Math.pow(r/this.unitDistance, 1) * ry_rot / r;
         
         
         // 2. 外力
@@ -82,7 +80,7 @@ export class Particle {
                     forceMagnitude = 1 / Math.pow(ud, 2);
                     break;
                 case ForceLaw.LogSqureInverse: // 对数平方反比
-                    forceMagnitude = 1 / (1+1*Math.log(ud))^2;
+                    forceMagnitude = 1 / Math.pow(1+1*Math.log(ud), 2);
                     break;
                 case ForceLaw.DualPower: // 双幂律
                     forceMagnitude = 4 / (ud*(ud+3));
@@ -153,9 +151,9 @@ export class DPIS {
         this.ctx = this.canvas.getContext('2d');
         this.backgroundColor = '#40404000';
         
-        // 临时画布用于图片采样
+        // 临时画布仅用于图片采样
         this.tempCanvas = document.createElement('canvas');
-        this.tempCtx = this.tempCanvas.getContext('2d');
+        this.tempCtx = this.tempCanvas.getContext('2d', { willReadFrequently: true });
         
         // 图片对象参数
         this.image = null;
@@ -169,9 +167,9 @@ export class DPIS {
         this.particleRadius = 2; 
         this.repulsionRadius = 1800;
         this.repulsionForce = 5000;
-        this.attractionForce = 50;
+        this.attractionForce = 500;
         this.resistence = 10;
-        this.particleInterval = 7;
+        this.particleInterval = 10;
         this.maxSpeed = 1080;
         this.forceLaw = ForceLaw.SqureInverse; // 外力力律
         this.unitDistance = 30; // 外力单位作用距离 px
@@ -193,12 +191,13 @@ export class DPIS {
     // 默认激活过滤：设置最小亮度和最小透明度，过暗或过于透明处不激活
     defaultFilterActivate(r, g, b, a) {
         const brightness = (r + g + b) / 3;
-        return brightness > 64 && a > 64;
+        // return brightness > 1 && a > 1;
+        return 1==1;
     }
     
-    // 默认颜色过滤：返回四级灰阶颜色
+    // 默认颜色过滤：返回灰阶颜色
     defaultFilterColor(r, g, b, a) {
-        const gray = Math.round((r + g + b) / 3 / 64) * 64;
+        const gray = (r + g + b) / 3;
         return `rgba(${gray}, ${gray}, ${gray}, ${a / 255})`;
     }
     
@@ -296,6 +295,10 @@ export class DPIS {
         
         const cols = Math.floor(this.canvas.width / this.particleInterval);
         const rows = Math.floor(this.canvas.height / this.particleInterval);
+        const num = cols * rows;
+        if (num >= 50000) {
+            console.warn('[DPIS] 粒子数量过多，可能影响性能。尝试调小画布尺寸或调大粒子间距。');
+        }
         
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
@@ -307,56 +310,52 @@ export class DPIS {
                 particle.mass = this.particleMass;
                 particle.radius = this.particleRadius;
                 particle.maxSpeed = this.maxSpeed;
+                particle.forceLaw = this.forceLaw;
+                particle.unitDistance = this.unitDistance;
+                particle.offsetAngle = this.offsetAngle;
                 this.particles.push(particle);
             }
         }
+
+        console.log('[DPIS] Created particles: ' + this.particles.length + ' (' + cols + 'c x ' + rows + 'r)');
     }
     
     // 加载图片
     loadImage(imageSrc) {
+        const info = imageSrc.length > 20 ? imageSrc.substring(0, 20) + '...' : imageSrc;
+        console.log('[DPIS] Loading image: ' + info)
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
                 this.image = img;
-                
-                // 切换图片时的过渡过程
-                this.transitionToNewImage(img);
+                this.scanImage(img);
                 resolve(img);
             };
             img.onerror = () => {
                 reject(new Error('图片加载失败'));
             };
-            img.src = imageSrc;
+            img.src = imageSrc
         });
-    }
-    
-    // 切换图片时的过渡过程
-    transitionToNewImage(newImage) {
-        this.scanImage(newImage);
     }
     
     // 扫描图片，根据采样步长生成粒子
     scanImage(image) {
-        // 预处理图片
-        // 将图片缩放到不超过画布大小，居中置于画布
-        const tempCtx = this.tempCtx;
-        
+        // 将图片缩放到适应画布，然后获取图片数据
         let imgWidth = image.width;
         let imgHeight = image.height;
-        const maxSize = Math.min(this.canvas.width, this.canvas.height);
-        
-        if (imgWidth > maxSize || imgHeight > maxSize) {
-            const ratio = maxSize / Math.max(imgWidth, imgHeight);
-            imgWidth *= ratio;
-            imgHeight *= ratio;
+        imgHeight *= this.canvas.width / imgWidth;
+        imgWidth = this.canvas.width;
+        if (imgHeight > this.canvas.height ) {
+            imgWidth *= this.canvas.height / imgHeight;
+            imgHeight = this.canvas.height;
         }
+        imgWidth = Math.floor(imgWidth);
+        imgHeight = Math.floor(imgHeight);
         
         this.tempCanvas.width = imgWidth;
         this.tempCanvas.height = imgHeight;
-        tempCtx.drawImage(image, 0, 0, imgWidth, imgHeight);
-        
-        // 获取图片数据
-        const imgData = tempCtx.getImageData(0, 0, imgWidth, imgHeight);
+        this.tempCtx.drawImage(image, 0, 0, imgWidth, imgHeight);
+        const imgData = this.tempCtx.getImageData(0, 0, imgWidth, imgHeight);
         
         // 计算偏移量，从图片坐标转换到画布中心坐标
         const offsetX = (this.canvas.width - imgWidth) / 2;
@@ -370,10 +369,14 @@ export class DPIS {
         const particleIndexList = [...activatedIndex, ...unactivatedIndex];
         
         // 根据粒子间距在图片（而非画布）上进行网格采样，并将采样结果赋予粒子
-        let particleIndex = 0;
-        for (let y = 0; y < imgHeight; y += this.particleInterval) {
-            for (let x = 0; x < imgWidth; x += this.particleInterval) {
-                if (particleIndex >= this.particles.length) break;
+        let activatedCount = 0;
+        const rows = Math.floor(imgHeight / this.particleInterval);
+        const cols = Math.floor(imgWidth / this.particleInterval);
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = col * this.particleInterval;
+                const y = row * this.particleInterval;
+                if (activatedCount >= this.particles.length) break;
                 
                 // 获取采样点的rgba值
                 const pixelIndex = (y * imgWidth + x) * 4;
@@ -382,28 +385,24 @@ export class DPIS {
                 const b = imgData.data[pixelIndex + 2];
                 const a = imgData.data[pixelIndex + 3];
                 
-                // 应用位置过滤
-                const filteredPos = this.filterPosition(x, y, imgWidth, imgHeight);
-                const posX = filteredPos.x + offsetX;
-                const posY = filteredPos.y + offsetY;
                 
                 // 应用激活过滤
                 if (this.filterActivate(r, g, b, a)) {
-                    const particle = this.particles[particleIndexList[particleIndex]];
-                    particleIndex++;
-                    
-                    // 更新粒子原始位置
-                    particle.originalX = posX;
-                    particle.originalY = posY;
+                    const particle = this.particles[particleIndexList[activatedCount]];
+                    activatedCount++;
+                        
+                    // 应用位置过滤 更新粒子原始位置
+                    const filteredPos = this.filterPosition(x, y, imgWidth, imgHeight);
+                    particle.originalX = filteredPos.x + offsetX;
+                    particle.originalY = filteredPos.y + offsetY;
                     
                     // 应用颜色过滤，更新粒子颜色
                     particle.color = this.filterColor(r, g, b, a);
-                    
+
                     // 若采用了未激活的粒子，则尽量让它从某个已激活的粒子那里继承实时位置
-                    // 这可以避免未激活的粒子在切换图片时突然出现在屏幕上
+                    // 这可以避免未激活的粒子在切换图片时突然从屏幕上空白处出现
                     if (activatedIndex.length > 10 && !particle.activated) {
                         const randomActivatedParticle = this.particles[activatedIndex[Math.floor(Math.random() * activatedIndex.length)]];
-                        if (!randomActivatedParticle.activated) continue;
                         particle.x = randomActivatedParticle.x;
                         particle.y = randomActivatedParticle.y;
                     }
@@ -411,11 +410,12 @@ export class DPIS {
                     particle.activated = true;
                 }
             }
-            if (particleIndex >= this.particles.length) break;
+            if (activatedCount >= this.particles.length) break;
         }
-        // 如果意外的有剩余粒子，将其设为未激活
-        if (particleIndex < this.particles.length) {
-            for (let i = particleIndex; i < this.particles.length; i++) {
+        console.log('[DPIS] ScanImage activate count:', activatedCount, 'total:', this.particles.length);
+        // 剩余粒子设为未激活
+        if (activatedCount < this.particles.length) {
+            for (let i = activatedCount; i < this.particles.length; i++) {
                 this.particles[particleIndexList[i]].activated = false;
             }
         }

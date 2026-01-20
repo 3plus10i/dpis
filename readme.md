@@ -25,11 +25,11 @@ DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是
 |------|------|--------|------|
 | `particleMass` | number | 1 | 粒子质量，影响加速度。一般不调。 |
 | `particleRadius` | number | 2 | 粒子显示半径(px) |
-| `repulsionRadius` | number | 1800 | 斥力作用最大距离(px) |
+| `repulsionRadius` | number | 1800 | 斥力作用最大距离(px)，大点没关系 |
 | `repulsionForce` | number | 5000 | 斥力强度 |
-| `attractionForce` | number | 50 | 引力强度(恢复力系数) |
+| `attractionForce` | number | 500 | 引力强度(恢复力系数) |
 | `resistence` | number | 10 | 阻尼系数，与引力强度相比不应过小。 |
-| `particleInterval` | number | 7 | 粒子采样间距(px) |
+| `particleInterval` | number | 10 | 粒子采样间距(px) |
 | `maxSpeed` | number | 1080 | 粒子最大速度(px/s)，防止过快。 |
 
 ### 参数模式建议
