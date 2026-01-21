@@ -12,15 +12,6 @@ const IMAGE_LIST = [
 
 const DEFAULT_IMAGE = IMAGE_LIST[0];
 
-function reloadImage() {
-    // 重新载入既有图片，或默认图片
-    if (dpis.image && dpis.image.src) {
-        dpis.loadImage(dpis.image.src)
-    } else {
-        dpis.loadImage(`public/${DEFAULT_IMAGE}`)
-    }
-}
-
 // 动态生成图片列表
 function renderImageList() {
     const imageListContainer = document.getElementById('imageList');
@@ -48,7 +39,7 @@ function renderImageList() {
             reader.onload = (event) => {
                 const dataUrl = event.target.result;
                 // 加载到 dpis
-                dpis.loadImage(dataUrl)
+                dpis.loadAndBuildImage(dataUrl)
                     .then(() => {
                         // 上传成功后，将图片临时添加到列表（如果尚未在列表中）
                         addImageToList(file.name, dataUrl);
@@ -88,7 +79,7 @@ function createImageItem(name, src, container) {
     
     // 绑定点击事件
     imageItem.addEventListener('click', () => {
-        dpis.loadImage(src)
+        dpis.loadAndBuildImage(src)
             .catch(error => {
                 alert('图片加载失败: ' + error.message);
             });
@@ -123,7 +114,7 @@ function addImageToList(name, src) {
     
     // 绑定点击事件
     newItem.addEventListener('click', () => {
-        dpis.loadImage(src)
+        dpis.loadAndBuildImage(src)
             .catch(error => {
                 alert('图片加载失败: ' + error.message);
             });
@@ -170,7 +161,7 @@ function initControls() {
             dpis.updateConfig(config);
             if (control.configName === 'particleInterval') {
                 // 调整间距后，总粒子数量会改变
-                reloadImage();
+                dpis.loadAndBuildImage(dpis.image.src)
             }
         });
     });
@@ -190,6 +181,20 @@ function initControls() {
             dpis.updateConfig(config);
             if (valueDisplay) {
                 valueDisplay.textContent = selectedLaw;
+            }
+        });
+    }
+
+    // 形状选择
+    const shapeSelect = document.getElementById('particleShape');
+    if (shapeSelect) {
+        shapeSelect.addEventListener('change', (e) => {
+            const selectedShape = e.target.value;
+            const config = {};
+            config['particleShape'] = selectedShape;
+            dpis.updateConfig(config);
+            if (valueDisplay) {
+                valueDisplay.textContent = selectedShape;
             }
         });
     }
@@ -229,13 +234,14 @@ function initPage() {
     
     // 初始加载罗德岛.png
     window.addEventListener('load', () => {
-        dpis.loadImage(`public/${DEFAULT_IMAGE}`)
+        setTimeout(() => {
+            dpis.loadAndBuildImage(`public/${DEFAULT_IMAGE}`)
+        }, 1000);
     });
 
     // 监听窗口大小变化（增加防抖）
     const handleResize = debounce(() => {
-        dpis.init();
-        reloadImage();
+        dpis.renew();
     }, 250);
 
     window.addEventListener('resize', handleResize);
