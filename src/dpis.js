@@ -31,6 +31,7 @@ export class DPIS {
         
         // 系统参数 - dpisConfig
         this.particleMass = 1;
+        this.particleMassRange = 0.5;
         this.particleRadius = 1.5; 
         this.particleInterval = 10;
         this.repulsionRadius = 1800;
@@ -80,7 +81,7 @@ export class DPIS {
         // 更新粒子的属性
         this.particles.forEach(particle => {
             particle.radius = this.particleRadius;
-            particle.mass = this.particleMass;
+            particle.mass = this.particleMass * (1 + this.particleMassRange * (Math.random() - 0.5));
             particle.maxSpeed = this.maxSpeed;
             particle.forceLaw = this.forceLaw;
             particle.unitDistance = this.unitDistance;
@@ -202,7 +203,7 @@ export class DPIS {
                 this.setIdleParticle(particle)
                 particle.x = particle.originalX;
                 particle.y = particle.originalY;
-                particle.mass = this.particleMass;
+                particle.mass = this.particleMass * (1 + this.particleMassRange * Math.random());
                 particle.radius = this.particleRadius;
                 particle.maxSpeed = this.maxSpeed;
                 particle.forceLaw = this.forceLaw;
@@ -439,9 +440,8 @@ export class Particle {
         const rx_rot = rx * Math.cos(theta) - ry * Math.sin(theta);
         const ry_rot = rx * Math.sin(theta) + ry * Math.cos(theta);
         
-        fx += -attractionForce * Math.pow(r/this.unitDistance, 1) * rx_rot / r;
-        fy += -attractionForce * Math.pow(r/this.unitDistance, 1) * ry_rot / r;
-        
+        fx += -attractionForce * this.mass * Math.pow(r/this.unitDistance, 1) * rx_rot / r;
+        fy += -attractionForce * this.mass * Math.pow(r/this.unitDistance, 1) * ry_rot / r;
         
         // 2. 外力
         // f = kf * function  *  (dx,dy) / d

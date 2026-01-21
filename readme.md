@@ -21,17 +21,18 @@ DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是
 直接打开即可运行。  
 演示页面提供了基础参数控制面板，您可以在控制面板中调整参数，实时查看效果。
 
-| 参数 | 类型 | 推荐参考值 | 说明 |
-|------|------|--------|------|
-| `particleMass` | number | 1 | 粒子质量，影响加速度。一般不调。 |
-| `particleRadius` | number | 2 | 粒子显示半径(px) |
-| `particleInterval` | number | 10 | 粒子间距(px) |
-| `repulsionRadius` | number | 1800 | 斥力作用最大距离(px)，大点没关系 |
-| `unitDistance` | number | 20 | 引力或斥力的单位作用距离(px) |
-| `repulsionForce` | number | 5000 | 斥力强度(互动作用力强度) |
-| `attractionForce` | number | 600 | 引力强度(恢复力系数) |
-| `resistence` | number | 10 | 阻尼系数，与引力强度相比不应过小。 |
-| `maxSpeed` | number | 1080 | 粒子最大速度(px/s)，防止过快。 |
+| 参数 | 推荐参考值 | 说明 |
+|------|--------|------|
+| `particleMass` | 1 | 粒子质量，影响加速度。一般不调。 |
+| `particleRadius` | 2 | 粒子显示半径(px) |
+| `particleMassRange` | 0.5 | 粒子质量分布范围(±50%)，制造粒子间微小运动差异 |
+| `particleInterval` | 10 | 粒子间距(px) |
+| `repulsionRadius` | 1800 | 斥力作用最大距离(px)，大点没关系 |
+| `unitDistance` | 20 | 引力或斥力的单位作用距离(px) |
+| `repulsionForce` | 5000 | 斥力强度(互动作用力强度) |
+| `attractionForce` | 600 | 引力强度(恢复力系数) |
+| `resistence` | 10 | 阻尼系数，与引力强度相比不应过小。 |
+| `maxSpeed` | 1080 | 粒子最大速度(px/s)，防止过快。 |
 
 ### 参数模式建议
 
@@ -79,12 +80,13 @@ DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是
 
 1. **恢复力(引力)**：线性恢复力，使粒子回到原始位置
     ```
-    g(r) = -kg * |r|  *  r/|r|
+    g(r) = -kg * m * |r|  *  r/|r|
     ```
-    其中 kg 为引力系数（`attractionForce`）
+    其中 kg 为引力系数（`attractionForce`），m 为粒子质量（`particleMass`），
+    调整粒子质量分布范围（`particleMassRange`）内的微小差异，可以制造粒子运动的微小差异，丰富动效。
     为恢复力增加偏移角度（`offsetAngle`），可以恢复过程具有一定的扭转效果
     ```
-    g(r) = -kg * |r|  *  r*exp(j*theta)/|r|
+    g(r) = -kg * m * |r|  *  A(theta)*r/|r|
     ```
 
 2. **外力(斥力)**：鼠标/触摸产生的斥力，服从(平方)反比定律
@@ -103,10 +105,11 @@ DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是
     - 反比率 ```f(d) = kf / |d/ud| * d/|d|```
     - 对数反比律 ```f(d) = kf / (1 + a*log(|d/ud|)) * d/|d|```
     - 双幂律 ```f(d) = kf (1+b)/ (|d/ud|^2+b*|d/ud|) * d/|d|```
+
     本项目默认使用反比律，以在较远距离上积极触发互动效果。
     ![decay-law](./doc/decay-law.png)
 
-3. **阻力**：线性阻尼力
+3. **阻力**：线性阻尼力，总是使粒子速度衰减
     ```
     h(v) = -kh * v
     ```
@@ -165,20 +168,17 @@ dpis.filterPosition = (x, y, imgWidth, imgHeight) => {
     const centerX = imgWidth / 2, centerY = imgHeight / 2;
     const dx = x - centerX, dy = y - centerY;
     
-    // 中心点直接返回
-    if (Math.abs(dx) + Math.abs(dy) < 1e-6) return { x: centerX, y: centerY }}
-    const a = imgWidth / 2;  // 半长轴
+    // 纵轴附加直接返回，避免除0错误
+    if (Math.abs(dx) < centerX/1000) return { x: centerX, y: centerY };
+    const a = imgWidth / 2; // 半长轴
     const b = imgHeight / 2; // 半短轴
-    const angle = imgWidth >= imgHeight ? 
-        Math.atan2(dy, dx) :      // 横图：长轴在x轴
-        Math.atan2(dx, dy);       // 竖图：长轴在y轴
+    const angle = Math.atan2(dy, dx); // (-π, π]
+    // 椭圆极坐标极径
+    const r = b / Math.sqrt(1 - (1-(b*b)/(a*a))*Math.pow(Math.cos(angle), 2));
     
-    const e = Math.sqrt(1 - (b * b) / (a * a)); // 偏心率 ε = √(1 - (b²/a²))
-    const r = b / Math.sqrt(1 - Math.pow(e * Math.cos(angle), 2)); // 椭圆极坐标方程：r = b / √(1 - ε²·cos²ψ)
-    
-    // 判断与矩形哪条边相交
+    // 与边界矩形相交
     const slope = Math.abs(dy / dx);
-    const aspectRatio = imgHeight / imgWidth;
+    const aspectRatio = b / a;
     let boundaryDist = slope <= aspectRatio ? 
         Math.abs(a / Math.cos(angle)) :
         Math.abs(b / Math.sin(angle));

@@ -128,6 +128,7 @@ function addImageToList(name, src) {
 function initControls() {
     const controls = [
         { id: 'particleRadius', configName: 'particleRadius', valueId: 'particleRadiusValue' },
+        { id: 'particleMassRange', configName: 'particleMassRange', valueId: 'particleMassRangeValue' },
         { id: 'repulsionRadius', configName: 'repulsionRadius', valueId: 'repulsionRadiusValue' },
         { id: 'unitDistance', configName: 'unitDistance', valueId: 'unitDistanceValue' },
         { id: 'repulsionForce', configName: 'repulsionForce', valueId: 'repulsionForceValue' },
