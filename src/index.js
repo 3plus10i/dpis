@@ -12,6 +12,17 @@ const IMAGE_LIST = [
 
 const DEFAULT_IMAGE = IMAGE_LIST[0];
 
+function reloadImage() {
+    // 重新载入既有图片，或默认图片
+    if (dpis.image && dpis.image.src) {
+        dpis.loadImage(dpis.image.src)
+            .catch(error => console.error('重新加载图片失败:', error));
+    } else {
+        dpis.loadImage(`public/${DEFAULT_IMAGE}`)
+            .catch(error => console.error('默认图片加载失败:', error));
+    }
+}
+
 // 动态生成图片列表
 function renderImageList() {
     const imageListContainer = document.getElementById('imageList');
@@ -164,11 +175,9 @@ function initControls() {
             dpis.updateConfig(config);
             if (control.configName === 'particleInterval') {
                 // 调整间距后，总粒子数量会改变
-                dpis.init();
-                dpis.loadImage(`public/${DEFAULT_IMAGE}`)
-                    .catch(error => console.error('初始图片加载失败:', error));
+                reloadImage();
             }
-        });    
+        });
     });
 
     // 力律选择
@@ -208,14 +217,20 @@ function initPage() {
     renderImageList();
     initControls();
 
-    // 移动端下调整默认参数
+    // 移动端初始化参数调整
     if (window.innerWidth <= 768) {
-        dpis.updateConfig({
-            particleRadius: 1.5,
-            particleInterval: 4,
-        });
+        const particleRadiusInput = document.getElementById('particleRadius');
+        const particleIntervalInput = document.getElementById('particleInterval');
+        
+        if (particleRadiusInput) {
+            particleRadiusInput.value = 1;
+            particleRadiusInput.dispatchEvent(new Event('input'));
+        }
+        if (particleIntervalInput) {
+            particleIntervalInput.value = 4;
+            particleIntervalInput.dispatchEvent(new Event('input'));
+        }
     }
-
     
     // 初始加载罗德岛.png
     window.addEventListener('load', () => {
@@ -226,14 +241,7 @@ function initPage() {
     // 监听窗口大小变化（增加防抖）
     const handleResize = debounce(() => {
         dpis.init();
-        // 优先重新加载既有图片
-        if (dpis.image && dpis.image.src) {
-            dpis.loadImage(dpis.image.src)
-                .catch(error => console.error('窗口调整后图片加载失败:', error));
-        } else {
-            dpis.loadImage(`public/${DEFAULT_IMAGE}`)
-                .catch(error => console.error('窗口调整后图片加载失败:', error));
-        }
+        reloadImage();
     }, 250);
 
     window.addEventListener('resize', handleResize);
