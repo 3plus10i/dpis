@@ -16,10 +16,8 @@ function reloadImage() {
     // 重新载入既有图片，或默认图片
     if (dpis.image && dpis.image.src) {
         dpis.loadImage(dpis.image.src)
-            .catch(error => console.error('重新加载图片失败:', error));
     } else {
         dpis.loadImage(`public/${DEFAULT_IMAGE}`)
-            .catch(error => console.error('默认图片加载失败:', error));
     }
 }
 
@@ -56,7 +54,6 @@ function renderImageList() {
                         addImageToList(file.name, dataUrl);
                     })
                     .catch(error => {
-                        console.error('图片加载失败:', error);
                         alert('图片加载失败: ' + error.message);
                     });
             };
@@ -93,7 +90,6 @@ function createImageItem(name, src, container) {
     imageItem.addEventListener('click', () => {
         dpis.loadImage(src)
             .catch(error => {
-                console.error('图片加载失败:', error);
                 alert('图片加载失败: ' + error.message);
             });
     });
@@ -129,7 +125,6 @@ function addImageToList(name, src) {
     newItem.addEventListener('click', () => {
         dpis.loadImage(src)
             .catch(error => {
-                console.error('图片加载失败:', error);
                 alert('图片加载失败: ' + error.message);
             });
     });
@@ -235,7 +230,6 @@ function initPage() {
     // 初始加载罗德岛.png
     window.addEventListener('load', () => {
         dpis.loadImage(`public/${DEFAULT_IMAGE}`)
-            .catch(error => console.error('初始图片加载失败:', error));
     });
 
     // 监听窗口大小变化（增加防抖）

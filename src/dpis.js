@@ -7,6 +7,11 @@ export class ForceLaw {
     static DualPower = 'dualPower';
 }
 
+export class ParticleShape {
+    static Circle = 'circle';
+    static Rect = 'rect';
+}
+
 // 动态粒子图像系统 - DPIS
 export class DPIS {
     constructor(canvasId) {
@@ -29,7 +34,7 @@ export class DPIS {
         this.mouseX = null;
         this.mouseY = null;
         
-        // 系统参数 - dpisConfig
+        // 系统参数 - forceParameters
         this.particleMass = 1;
         this.particleMassRange = 0.5;
         this.particleRadius = 1.5; 
@@ -90,8 +95,7 @@ export class DPIS {
         
     }
 
-    getDpisState() {
-        // mouseX, mouseY, repulsionRadius, repulsionForce, attractionForce, resistence
+    getForceParameters() {
         return {
             mouseX: this.mouseX,
             mouseY: this.mouseY,
@@ -141,9 +145,9 @@ export class DPIS {
     }
     
     // 初始化系统
-    init(dpisConfig) {
+    init(forceParameters) {
         // 合并配置
-        Object.assign(this, dpisConfig);
+        Object.assign(this, forceParameters);
         
         // 设置画布尺寸
         this.resizeCanvas();
@@ -168,21 +172,27 @@ export class DPIS {
         this.canvas.height = canvasWrapper.clientHeight - paddingTop - paddingBottom;
     }
     
-    //  闲置粒子设置：将粒子位置设置为画布中央的正态分布随机位置
+    //  闲置粒子：位置正态分布位置，白色，激活
     setIdleParticle(particle) {
-        const r = Math.min(this.canvas.width, this.canvas.height) / 2;
+        const r_4 = Math.min(this.canvas.width, this.canvas.height) / 2 / 4;
+        // 更高效的极坐标拒绝采样法生成正态随机数
+        let s=0, u0, u1;
+        while (s >= 1 || s === 0) {
+            u0 = 2*Math.random() - 1;
+            u1 = 2*Math.random() - 1;
+            s = u0 * u0 + u1 * u1;
+        }
+        s = Math.sqrt((-2.0 * Math.log(s)) / s);
+        u0 = Math.max(Math.min(u0 * s, 3), -3); // 3sigma钳位
+        u1 = Math.max(Math.min(u1 * s, 3), -3);
 
-        // Box-Muller 变换获取标准正态分布随机数
-        let u1 = Math.random();
-        let u2 = Math.random();
-        let z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-        let z1 = Math.sqrt(-2.0 * Math.log(u1)) * Math.sin(2.0 * Math.PI * u2);
+        const x = this.canvas.width / 2 + u0 * r_4 ;
+        const y = this.canvas.height / 2 + u1 * r_4 ;
 
-        const x = this.canvas.width / 2 + z0 * r / 4;
-        const y = this.canvas.height / 2 + z1 * r / 4;
-
-        particle.originalX = Math.max(r/4, Math.min(this.canvas.width - r/4, x));
-        particle.originalY = Math.max(r/4, Math.min(this.canvas.height - r/4, y));
+        particle.originalX = x;
+        particle.originalY = y;
+        particle.color = '#ffffff';
+        particle.active = true;
     }
     
     // 创建所有粒子对象
@@ -199,8 +209,9 @@ export class DPIS {
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 const particle = new Particle(0, 0);
-                // 初始化到闲置粒子位置
-                this.setIdleParticle(particle)
+                // 初始化到画布中心
+                particle.originalX = this.canvas.width / 2;
+                particle.originalY = this.canvas.height / 2;
                 particle.x = particle.originalX;
                 particle.y = particle.originalY;
                 particle.mass = this.particleMass * (1 + this.particleMassRange * Math.random());
@@ -228,6 +239,7 @@ export class DPIS {
                 resolve(img);
             };
             img.onerror = () => {
+                console.error('[DPIS] Image load error: ' + info);
                 reject(new Error('图片加载失败'));
             };
             img.src = imageSrc
@@ -343,7 +355,7 @@ export class DPIS {
     update(dtSeconds) {
         // 更新所有粒子状态
         this.particles.forEach(particle => {
-            particle.update(this.getDpisState(), dtSeconds);
+            particle.update(this.getForceParameters(), dtSeconds);
         });
     }
     
@@ -408,22 +420,25 @@ export class Particle {
         this.maxSpeed = 1080;
         
         // 粒子属性
-        this.mass = 1;
         this.color = '#888888';
-        this.radius = 1;
+
+        // 激活性，应由上级结构管理
         this.activated = false;
 
-        // 力场相关
+        // 力场和绘制相关，应由上级结构管理
+        this.shape = ParticleShape.Circle;
+        this.mass = 1;
+        this.radius = 1;
         this.forceLaw = ForceLaw.Inverse; // 外力力律
         this.unitDistance = 30; // 外力单位作用距离 px
         this.offsetAngle = 0; // 恢复力偏移角度 deg
     }
     
     // 计算受力 F = 恢复力+外力+阻力
-    calculateForce(dpisConfig) {
-        const {repulsionRadius, repulsionForce, attractionForce, resistence } = dpisConfig;
+    calculateForce(forceParameters) {
+        const {repulsionRadius, repulsionForce, attractionForce, resistence } = forceParameters;
 
-        let { mouseX, mouseY } = dpisConfig;
+        let { mouseX, mouseY } = forceParameters;
 
         // 鼠标位置null视为作用范围外
         if (mouseX === null ) { mouseX = - repulsionRadius;}
@@ -488,11 +503,11 @@ export class Particle {
     
     // 更新粒子速度和位置
     // dtSeconds 单位：秒
-    update(dpisConfig, dtSeconds) {
+    update(forceParameters, dtSeconds) {
         if (!this.activated) return;
         
         // 计算受力
-        const { fx, fy } = this.calculateForce(dpisConfig);
+        const { fx, fy } = this.calculateForce(forceParameters);
 
         const old_vx = this.vx;
         const old_vy = this.vy;
@@ -519,7 +534,11 @@ export class Particle {
         
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        if (this.shape === ParticleShape.Circle) {
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        } else if (this.shape === ParticleShape.Rect) {
+            ctx.rect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+        }
         ctx.fill();
     }
 }
