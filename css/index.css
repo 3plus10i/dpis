@@ -92,7 +92,7 @@ body {
     font-size: 13px;
     transition: all 0.2s ease;
     padding: 4px 8px;
-    background-color: rgba(var(--text-secondary-rgb), 0.1);
+    background-color: rgba(var(--text-secondary-rgb), 0.5);
     border-radius: 8px;
 }
 
@@ -106,7 +106,7 @@ body {
 
 .header-link:hover {
     color: var(--text-color);
-    background: rgba(var(--particle-light-rgb), 0.4);
+    background: rgba(var(--text-secondary-rgb), 0.9);
 }
 
 .header-line {
@@ -248,6 +248,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative;
 }
 
 /* 标签 */
@@ -255,6 +256,18 @@ body {
     font-size: 13px;
     font-weight: 500;
     color: var(--text-color);
+    display: inline-block;
+}
+
+/* 标签英文翻译 */
+.label-row label .label-en {
+    position: absolute;
+    right: 35%;
+    top: 15%;
+    transform: translate(0px, 6px);
+    font-size: 12px;
+    color: rgba(var(--text-secondary-rgb), 0.2);
+    white-space: nowrap;
 }
 
 /* 数值显示 */

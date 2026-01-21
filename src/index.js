@@ -6,8 +6,8 @@ const dpis = new DPIS(canvasId);
 
 // 示例图片列表
 const IMAGE_LIST = [
-    'rhodes_island.png', 'rhodes_island2.png','rainbow6.png', 'rhinelab.png','white.png',
-    'kroos.png','MTL_SL_G2.png'
+    'Rhodes.png', 'rainbow6.png', 'rhinelab.png', 'sanity.png',
+    'prts.png', 'kroos.png', 'white.png'
 ];
 
 const DEFAULT_IMAGE = IMAGE_LIST[0];
@@ -160,8 +160,13 @@ function initControls() {
             config[control.configName] = value;
             dpis.updateConfig(config);
             if (control.configName === 'particleInterval') {
-                // 调整间距后，总粒子数量会改变
-                dpis.loadAndBuildImage(dpis.image.src)
+                debounce(() => {
+                    try {
+                        dpis.loadAndBuildImage(dpis.image.src)
+                    } catch (error) {
+                        dpis.loadAndBuildImage(`public/${DEFAULT_IMAGE}`);
+                    }
+                }, 250)();
             }
         });
     });
@@ -232,7 +237,7 @@ function initPage() {
         }
     }
     
-    // 初始加载罗德岛.png
+    // 延迟加载默认图片
     window.addEventListener('load', () => {
         setTimeout(() => {
             dpis.loadAndBuildImage(`public/${DEFAULT_IMAGE}`)

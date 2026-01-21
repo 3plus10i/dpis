@@ -18,7 +18,7 @@ export class DPIS {
         // 粒子群
         this._particles = [];
         this.activeNum = 0;
-        this.leastParticleNum = 4096;
+        this.leastParticleNum = 2048;
         
         // 画布对象参数
         this.canvas = document.getElementById(canvasId);
@@ -331,12 +331,13 @@ export class DPIS {
         
         const wasActiveNum = this.activeNum;
         let count = 0;
-        const rows = Math.floor(imgHeight / this.particleInterval);
-        const cols = Math.floor(imgWidth / this.particleInterval);
+        const rows = Math.floor((imgHeight-2) / this.particleInterval);
+        const cols = Math.floor((imgWidth-2) / this.particleInterval);
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
-                const x = col * this.particleInterval;
-                const y = row * this.particleInterval;
+                // 细节不要边界1像素
+                const x = col * this.particleInterval + 1;
+                const y = row * this.particleInterval + 1;
 
                 // 获取采样点的rgba值
                 const pixelIndex = (y * imgWidth + x) * 4;
