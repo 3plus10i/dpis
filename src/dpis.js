@@ -26,8 +26,8 @@ export class DPIS {
         this.image = null;
         
         // 鼠标位置参数
-        this.mouseX = 0;
-        this.mouseY = 0;
+        this.mouseX = null;
+        this.mouseY = null;
         
         // 系统参数 - dpisConfig
         this.particleMass = 1;
@@ -425,8 +425,9 @@ export class Particle {
 
         let { mouseX, mouseY } = dpisConfig;
 
-        if (mouseX === null ) { mouseX = repulsionRadius+1;}
-        if (mouseY === null ) { mouseY = repulsionRadius+1;}
+        // 鼠标位置null视为作用范围外
+        if (mouseX === null ) { mouseX = - repulsionRadius;}
+        if (mouseY === null ) { mouseY = - repulsionRadius;}
         
         let fx = 0;
         let fy = 0;

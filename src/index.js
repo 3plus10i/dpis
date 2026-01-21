@@ -17,7 +17,7 @@ function renderImageList() {
     const imageListContainer = document.getElementById('imageList');
     imageListContainer.innerHTML = ''; // 清空列表
 
-    // 1. 创建上传按钮项
+    // 创建上传按钮项
     const uploadItem = document.createElement('div');
     uploadItem.className = 'image-item upload-item';
     uploadItem.innerHTML = `
@@ -124,7 +124,7 @@ function addImageToList(name, src) {
     });
 }
 
-// 初始化控制面板
+// 控制面板
 function initControls() {
     const controls = [
         { id: 'particleRadius', configName: 'particleRadius', valueId: 'particleRadiusValue' },
@@ -208,6 +208,14 @@ function initPage() {
     renderImageList();
     initControls();
 
+    // 移动端下调整默认参数
+    if (window.innerWidth <= 768) {
+        dpis.updateConfig({
+            particleRadius: 1.5,
+            particleInterval: 4,
+        });
+    }
+
     
     // 初始加载罗德岛.png
     window.addEventListener('load', () => {
@@ -218,7 +226,7 @@ function initPage() {
     // 监听窗口大小变化（增加防抖）
     const handleResize = debounce(() => {
         dpis.init();
-        // 有限重新加载既有图片
+        // 优先重新加载既有图片
         if (dpis.image && dpis.image.src) {
             dpis.loadImage(dpis.image.src)
                 .catch(error => console.error('窗口调整后图片加载失败:', error));
