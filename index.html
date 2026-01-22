@@ -6,13 +6,14 @@
     <title>DPIS - 动态粒子图像系统</title>
     <link rel="stylesheet" href="css/index.css">
     <script type="module" src="src/index.js"></script>
+    <link rel="icon" href="public/favicon_64x64.ico" type="image/x-icon">
 </head>
 
 <body>
     <div class="app-container">
         <header class="app-header">
             <div class="header-main">
-                <h1 class="app-title">D<span>ynamic</span> P<span>article</span> I<span>mage</span> S<span>ystem</span></h1>
+                <h1 class="app-title"><img src="public/favicon_64x64.ico" alt="DPIS" class="app-icon">D<span>ynamic</span> P<span>article</span> I<span>mage</span> S<span>ystem</span></h1>
                 <nav class="header-links">
                     <a href="https://ak.hypergryph.com/#world" class="header-link" target="_blank"><img src="public/hypergryph.ico" alt="舟"></a>
                     <a href="https://github.com/3plus10i/dpis" class="header-link" target="_blank"><img src="public/github.png" alt="Github"></a>
@@ -30,16 +31,16 @@
                 <div class="control-item">
                     <div class="label-row">
                         <label>粒子半径<span class="label-en">Particle Radius</span></label>
-                        <span id="particleRadiusValue" class="value-display">2</span>
+                        <span id="particleRadiusValue" class="value-display">1</span>
                     </div>
-                    <input type="range" id="particleRadius" min="0.5" max="10" value="2" step="0.1">
+                    <input type="range" id="particleRadius" min="0.5" max="10" value="1" step="0.1">
                 </div>
                 <div class="control-item">
                     <div class="label-row">
                         <label>粒子间距<span class="label-en">Particle Spacing</span></label>
-                        <span id="particleSpacingValue" class="value-display">10</span>
+                        <span id="particleSpacingValue" class="value-display">6</span>
                     </div>
-                    <input type="range" id="particleInterval" min="2" max="25" value="10" step="1">
+                    <input type="range" id="particleInterval" min="2" max="25" value="6" step="1">
                 </div>
                 <div class="control-item">
                     <div class="label-row">
@@ -72,12 +73,12 @@
                 <div class="control-item">
                     <div class="label-row">
                         <label>力律<span class="label-en">Force Law</span></label>
-                        <span id="forceLawValue" class="value-display">inverse 1/r</span>
+                        <span id="forceLawValue" class="value-display">squareInverse 1/r^2</span>
                     </div>
                     <select id="forceLaw">
                         <option value="inverse">inverse 1/r</option>
                         <option value="logInverse">logInverse 1/(1+log(r))</option>
-                        <option value="squareInverse">squareInverse 1/r^2</option>
+                        <option value="squareInverse" selected>squareInverse 1/r^2</option>
                         <option value="logSquareInverse">logSquareInverse 1/(1+a*log(d))^2</option>
                         <option value="dualPower">dualPower (1+b)/(d^2+b*d)</option>
                     </select>

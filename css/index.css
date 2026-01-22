@@ -62,7 +62,16 @@ body {
     letter-spacing: 2px;
     color: var(--text-color);
     text-shadow: 0 0 10px rgba(var(--particle-light-rgb), 0.3);
+    display: flex;
+    align-items: center;
 }
+
+.app-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+}
+
 
 .app-title span {
     font-size: 20px;
@@ -74,7 +83,7 @@ body {
     font-weight: 400;
     color: var(--text-secondary);
     letter-spacing: 1px;
-    /* margin-left: 10px; */
+    /* margin-left: 40px; */
 }
 
 /* 导航链接样式 */
@@ -124,10 +133,6 @@ body {
     flex: 1; /* 占据剩余空间 */
     display: flex;
     background: var(--component-bg);
-    background-image: url('../public/cross200xl.png');
-    background-repeat: repeat;
-    background-position: center;
-    background-size: 200px 200px;
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border-color);
@@ -211,6 +216,10 @@ body {
     align-items: center;
     justify-content: center;
     background: rgba(var(--bg-color-rgb), 0.6);
+    background-image: url('../public/cross200xl.png');
+    background-repeat: repeat;
+    background-position: center;
+    background-size: 200px 200px;
     padding: 20px;
     min-width: 0;
 }

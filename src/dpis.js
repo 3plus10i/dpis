@@ -29,7 +29,7 @@ export class DPIS {
         this.tempCanvas = document.createElement('canvas');
         this.tempCtx = this.tempCanvas.getContext('2d', { willReadFrequently: true });
         
-        // 图片对象参数
+        // 图片对象
         this.image = null;
         
         // 鼠标位置参数
@@ -37,19 +37,20 @@ export class DPIS {
         this.mouseY = null;
         
         // 系统参数 - forceParameters
-        this.particleMass = 1;
+        this.particleMassBase = 1;
         this.particleMassRange = 0.5;
-        this.particleRadius = 1.5; 
-        this.particleInterval = 10;
+        this.particleRadius = 1; 
+        this.particleShape = ParticleShape.Circle;
+
+        this.particleInterval = 6;
         this.repulsionRadius = 1800;
         this.repulsionForce = 5000;
         this.attractionForce = 500;
         this.resistence = 15;
         this.maxSpeed = 1080;
-        this.forceLaw = ForceLaw.Inverse; // 外力力律
+        this.forceLaw = ForceLaw.SquareInverse; // 外力力律
         this.unitDistance = 20; // 外力单位作用距离 px
         this.offsetAngle = 0; // 恢复力偏移角度 deg
-        this.particleShape = ParticleShape.Circle;
         
         // 过滤函数
         this.filterActivate = this.defaultFilterActivate;
@@ -80,6 +81,18 @@ export class DPIS {
     // 默认位置过滤：返回原始位置
     defaultFilterPosition(x, y, imgWidth, imgHeight) {
         return { x, y };
+    }
+
+    // 粒子质量：基础值 ± 范围
+    get particleMass() {
+        return this.particleMassBase * (1 + this.particleMassRange * (Math.random() - 0.5));
+    }
+
+    // 更新粒子自有属性
+    updateParticleOwnAttributes(p) {
+        p.OwnAttributes.radius = this.particleRadius;
+        p.OwnAttributes.shape = this.particleShape;
+        p.OwnAttributes.mass = this.particleMass;
     }
     
     // 重置画布、重载图片，重启动画
@@ -150,17 +163,7 @@ export class DPIS {
     // 创建一个新粒子
     _createParticle() {
         const p = new Particle();
-        p.originalX = this.canvas.width / 2;
-        p.originalY = this.canvas.height / 2;
-        p.x = p.originalX;
-        p.y = p.originalY;
-        p.radius = this.particleRadius;
-        p.shape = this.particleShape;
-        p.mass = this.particleMass * (1 + this.particleMassRange * (Math.random() - 0.5));
-        p.maxSpeed = this.maxSpeed;
-        p.forceLaw = this.forceLaw;
-        p.unitDistance = this.unitDistance;
-        p.offsetAngle = this.offsetAngle;
+        this.updateParticleOwnAttributes(p);
         this._particles.push(p);
         return p;
     }
@@ -179,17 +182,22 @@ export class DPIS {
 
     // 更新系统参数，主要用于前端监听实时调整
     updateConfig(dpisAttrs) {
-        // 包括particleRadius, particleShape, particleMass, particleMassRange, forceLaw, unitDistance, offsetAngle, repulsionRadius, repulsionForce, resistence, attractionForce
+        // 包括 粒子属性：particleRadius, particleShape, particleMassBase, particleMassRange, 
+        // 粒子计算和绘制参数：forceLaw, maxSpeed, unitDistance, offsetAngle, repulsionRadius, repulsionForce, resistence, attractionForce
+        // 构建参数：particleInterval
         Object.assign(this, dpisAttrs);
-        // 更新粒子的自维护属性
-        this.getActiveParticles().forEach(particle => {
-            particle.radius = this.particleRadius;
-            particle.mass = this.particleMass * (1 + this.particleMassRange * (Math.random() - 0.5));
-        });
+        // 更新激活粒子的自维护属性，以便于视觉上立即生效
+        if ('particleRadius' in dpisAttrs || 'particleMassRange' in dpisAttrs || 'particleShape' in dpisAttrs) {
+            this.getActiveParticles().forEach(particle => {
+                this.updateParticleOwnAttributes(particle);
+            });
+        }
         
     }
 
-    getUpdateParameters() {
+    // 获取当前粒子群更新参数
+    // 鼠标位置，以及计算和绘制所需参数
+    getConditionParameters() {
         return {
             mouseX: this.mouseX,
             mouseY: this.mouseY,
@@ -197,7 +205,6 @@ export class DPIS {
             repulsionForce: this.repulsionForce,
             resistence: this.resistence,
             attractionForce: this.attractionForce,
-            shape: this.particleShape,
             forceLaw: this.forceLaw,
             unitDistance: this.unitDistance,
             offsetAngle: this.offsetAngle,
@@ -275,8 +282,8 @@ export class DPIS {
 
         particle.originalX = x;
         particle.originalY = y;
-        // particle.x = x;
-        // particle.y = y;
+        particle.x = this.canvas.width / 2; // 中心散开效果
+        particle.y = this.canvas.height / 2;
         particle.color = '#eeeeee';
     }
     
@@ -288,7 +295,7 @@ export class DPIS {
             const img = new Image();
             img.onload = () => {
                 this.image = img;
-                this.buildFromImage(img);
+                this.build(img);
                 resolve(img);
             };
             img.onerror = () => {
@@ -313,9 +320,10 @@ export class DPIS {
     }
     
     // 扫描图片，将图形信息赋予粒子，构建粒子图
-    buildFromImage(image) {
+    build(image) {
         // 将图片缩放到适应画布，然后获取图片数据
-        let a = Math.max(image.width/this.canvas.width, image.height/this.canvas.height);
+        // 细节：两边各扩张半个粒子间隔，尽量避免边界粒子显示不完全
+        let a = Math.max(image.width/(this.canvas.width+this.particleInterval), image.height/(this.canvas.height+this.particleInterval));
         const imgWidth = Math.floor(image.width/a);
         const imgHeight = Math.floor(image.height/a);
         
@@ -327,17 +335,15 @@ export class DPIS {
         // 计算偏移量，从图片坐标转换到画布中心坐标
         const offsetX = (this.canvas.width - imgWidth) / 2;
         const offsetY = (this.canvas.height - imgHeight) / 2;
-
         
         const wasActiveNum = this.activeNum;
         let count = 0;
-        const rows = Math.floor((imgHeight-2) / this.particleInterval);
-        const cols = Math.floor((imgWidth-2) / this.particleInterval);
+        const rows = Math.floor((imgHeight) / this.particleInterval);
+        const cols = Math.floor((imgWidth) / this.particleInterval);
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
-                // 细节不要边界1像素
-                const x = col * this.particleInterval + 1;
-                const y = row * this.particleInterval + 1;
+                const x = col * this.particleInterval;
+                const y = row * this.particleInterval;
 
                 // 获取采样点的rgba值
                 const pixelIndex = (y * imgWidth + x) * 4;
@@ -354,7 +360,8 @@ export class DPIS {
                         this.randomNextActiveParticle(count);
                     } else {
                         // 2. 如果不够，从未激活区域顺序取用（并激活）
-                        // 取用的未激活粒子从某个过去激活粒子借用实时位置
+                        // 给定新激活粒子的各种自有属性
+                        // 实时位置：从某个过去激活粒子借用
                         if (wasActiveNum > 10) {
                             const randomWasActiveIndex = Math.floor(Math.random() * wasActiveNum);
                             this.getParticle(count).x = this.getParticle(randomWasActiveIndex).x;
@@ -362,6 +369,8 @@ export class DPIS {
                         } else {
                             this.setIdleParticle(this.getParticle(count));
                         }
+                        // 初始化粒子自有属性
+                        this.updateParticleOwnAttributes(this.getParticle(count));
                     };
                     
                     // 应用位置过滤 更新粒子原始位置
@@ -386,7 +395,7 @@ export class DPIS {
     update(dtSeconds) {
         // 更新所有粒子运动状态和样式
         this.getActiveParticles().forEach(particle => {
-            particle.update(this.getUpdateParameters(), dtSeconds);
+            particle.update(this.getConditionParameters(), dtSeconds);
         });
     }
     
@@ -441,30 +450,51 @@ export class Particle {
         this.originalY = 0;
         this.color = '#888888';
         
-        // 绘制更新
+        // 构建或绘制更新
         this.x = 0;
         this.y = 0;
         this.vx = 0;
         this.vy = 0;
         
-        // 可调但应该在绘制中自有恒定值的量
-        this.mass = 1;
-        this.radius = 1;
-        this.shape = ParticleShape.Circle; // 粒子形状
-
-        // 力场和绘制相关，应由上级结构管理
-        // 可调但是不需要自己维护恒定值的量
-        // this.forceLaw = ForceLaw.Inverse; // 外力力律
-        // this.unitDistance = 30; // 外力单位作用距离 px
-        // this.offsetAngle = 0; // 恢复力偏移角度 deg
-        // this.maxSpeed = 1080; // 甚至懒得调，真没用
+        // 初始化和调参时更新，绘制不更新
+        // 自有属性
+        this.OwnAttributes = {
+            radius: 1,
+            shape: ParticleShape.Circle,
+            mass: 1,
+        }
+        
+        // Instance:
+        // this.conditionParameters = {
+        //     mouseX: null,
+        //     mouseY: null,
+        //     forceLaw: ForceLaw.Inverse, // 外力力律
+        //     unitDistance: 30, // 外力单位作用距离 px
+        //     offsetAngle: 0, // 恢复力偏移角度 deg
+        //     maxSpeed: 1080, // 甚至懒得调，真没用
+        //     repulsionRadius: 100, // 斥力作用半径 px
+        //     repulsionForce: 100, // 斥力系数 px/mass
+        //     resistence: 0.99, // 阻力系数
+        //     attractionForce: 100, // 恢复力系数 px/mass
+        // }
     }
+
+    get radius() {
+        return this.OwnAttributes.radius;
+    }
+    get shape() {
+        return this.OwnAttributes.shape;
+    }
+    get mass() {
+        return this.OwnAttributes.mass;
+    }
+
     
     // 计算受力 F = 恢复力+外力+阻力
-    calculateForce(updateParameters) {
-        const {repulsionRadius, repulsionForce, attractionForce, resistence, forceLaw, unitDistance, offsetAngle } = updateParameters;
+    calculateForce(conditionParameters) {
+        const {repulsionRadius, repulsionForce, attractionForce, resistence, forceLaw, unitDistance, offsetAngle } = conditionParameters;
 
-        let { mouseX, mouseY } = updateParameters;
+        let { mouseX, mouseY } = conditionParameters;
 
         // 鼠标位置null视为作用范围外
         if (mouseX === null ) { mouseX = - repulsionRadius;}
@@ -531,10 +561,10 @@ export class Particle {
     
     // 更新粒子速度和位置
     // dtSeconds 单位：秒
-    update(updateParameters, dtSeconds) {
+    update(conditionParameters, dtSeconds) {
         // 计算受力
-        const { fx, fy } = this.calculateForce(updateParameters);
-        const { maxSpeed } = updateParameters;
+        const { fx, fy } = this.calculateForce(conditionParameters);
+        const { maxSpeed } = conditionParameters;
 
         const old_vx = this.vx;
         const old_vy = this.vy;

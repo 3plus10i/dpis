@@ -1,8 +1,8 @@
-# Dynamic Particle Image System - DPIS *动态点阵图像系统*
+<h1><img src="./public/favicon_64x64.ico" alt="DPIS" width="32" height="32"> Dynamic Particle Image System</h1>
 
-仿 [明日方舟官网](https://ak.hypergryph.com/#world) 的交互式动态点阵系统。
+DPIS **交互式动态点阵图形系统**，灵感来自 [明日方舟官网](https://ak.hypergryph.com/#world) 。
 
-DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是 DPIS 的完整实现和演示。
+DPIS 被设计为模块化的，便于嵌入前端。
 
 本项目受到 [Arknights-FlowingPoints](https://github.com/BlackCoder0/Arknights-FlowingPoints) 的启发，在此致谢。
 
@@ -27,11 +27,10 @@ DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是
 
 | 参数 | 推荐参考值 | 说明 |
 |------|--------|------|
-| `particleMass` | 1 | 粒子质量，影响加速度。一般不调。 |
 | `particleRadius` | 1.5 | 粒子显示半径(px) |
-| `particleMassRange` | 0.5 | 粒子质量分布范围(±50%)，制造粒子间微小运动差异 |
 | `particleInterval` | 10 | 粒子间距(px) |
-| `repulsionRadius` | 1800 | 斥力作用最大距离(px)，大点没关系 |
+| `particleMassRange` | 0.5 | 粒子质量分布范围(±50%)，制造粒子间微小运动差异 |
+| `repulsionRadius` | 1800 | 斥力最大作用距离(px) |
 | `unitDistance` | 20 | 引力或斥力的单位作用距离(px) |
 | `repulsionForce` | 5000 | 斥力强度(互动作用力强度) |
 | `attractionForce` | 500 | 引力强度(恢复力系数) |
@@ -109,7 +108,7 @@ DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是
     ```
     g(r) = -kg * m * |r|  *  r/|r|
     ```
-    其中 kg 为引力系数（`attractionForce`），m 为粒子质量（`particleMass`），
+    其中 kg 为引力系数（`attractionForce`），m 为粒子质量，
     调整粒子质量分布范围（`particleMassRange`）内的微小差异，可以制造粒子运动的微小差异，丰富动效。
     为恢复力增加偏移角度（`offsetAngle`），可以恢复过程具有一定的扭转效果
     ```
@@ -119,7 +118,7 @@ DPIS 被设计为模块化的，便于嵌入您的前端网页中。本项目是
 2. **外力(斥力)**：鼠标/触摸产生的斥力，通过 `forceLaw` 参数选择不同的衰减规律
     
     可选的力律及对应的 `forceLaw` 值：
-    - 反比律（默认）```f(d) = kf / |d/ud| * d/|d|```
+    - 反比律 `inverse` ```f(d) = kf / |d/ud| * d/|d|```
     - 对数反比律 `logInverse` ```f(d) = kf / (1 + 3*log(|d/ud|)) * d/|d|```
     - 平方反比律 `squareInverse` ```f(d) = kf / |d/ud|² * d/|d|```
     - 对数平方反比律 `logSquareInverse` ```f(d) = kf / (1 + log(|d/ud|))² * d/|d|```
@@ -160,9 +159,9 @@ DPIS的核心是一群粒子。同时DPIS为粒子们提供参数配置，画布
    - **复用策略**：优先从已激活区域随机选取粒子复用，造成既有粒子随机运动，最终转移到新图形位置的效果
    - **平滑过渡**：新激活的粒子会借用已有激活粒子的实时位置作为初始位置，加入绘制，避免突然出现在空白处
 5. **过滤处理**：在赋值之前可以进行三种过滤，过滤规则可自定义。
-    - **激活过滤**：对亮度低于阈值或透明度低于阈值的点，不激活粒子
-    - **颜色过滤**：将 RGBA 转换为灰度，或进行二值化处理
-    - **位置过滤**：进行非线性变形，在视觉上改变"网格"结构
+    - **激活过滤**：根据 RGBA 值判断是否需要在此处放置一个粒子
+    - **颜色过滤**：将 RGBA 进行后处理，例如灰度、二值化等
+    - **位置过滤**：对位置做变换，可在视觉上改变"网格"结构
 
 #### 2.2.1 自定义过滤函数
 

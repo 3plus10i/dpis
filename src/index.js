@@ -6,7 +6,7 @@ const dpis = new DPIS(canvasId);
 
 // 示例图片列表
 const IMAGE_LIST = [
-    'Rhodes.png', 'rainbow6.png', 'rhinelab.png', 'sanity.png',
+    'Rhodes.png','dpis.png' ,'rainbow6.png', 'rhinelab.png', 'sanity.png',
     'prts.png', 'kroos.png', 'white.png'
 ];
 
