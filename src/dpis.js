@@ -10,6 +10,8 @@ export class ForceLaw {
 export class ParticleShape {
     static Circle = 'circle';
     static Rect = 'rect';
+    static Triangle = 'triangle';
+    static Cross = 'cross';
 }
 
 // 动态粒子图像系统 - DPIS
@@ -463,6 +465,9 @@ export class Particle {
             shape: ParticleShape.Circle,
             mass: 1,
         }
+
+        // 暴露绘制函数属性
+        this.draw = this.defaultDraw;
         
         // Instance:
         // this.conditionParameters = {
@@ -586,14 +591,54 @@ export class Particle {
     }
     
     // 绘制粒子
-    draw(ctx) {
+    defaultDraw(ctx) {
+        if (this.shape === undefined || this.shape === null) {
+            this.drawCircle(ctx);
+        } else if (this.shape === ParticleShape.Circle) {
+            this.drawCircle(ctx);
+        } else if (this.shape === ParticleShape.Rect) {
+            this.drawRect(ctx);
+        } else if (this.shape === ParticleShape.Triangle) {
+            this.drawTriangle(ctx);
+        } else if (this.shape === ParticleShape.Cross) {
+            this.drawCross(ctx);
+        } else {
+            throw new Error(`[DPIS] Unknown particle shape: ${this.shape}`);
+        }
+    }
+
+    drawCircle(ctx) {
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        if (this.shape === ParticleShape.Circle) {
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        } else if (this.shape === ParticleShape.Rect) {
-            ctx.rect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
-        }
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
+    }
+
+    drawRect(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.rect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+        ctx.fill();
+    }
+
+    drawTriangle(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y - this.radius);
+        ctx.lineTo(this.x - this.radius, this.y + this.radius);
+        ctx.lineTo(this.x + this.radius, this.y + this.radius);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    drawCross(ctx) {
+        ctx.lineWidth = this.radius/5;
+        ctx.strokeStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(this.x - this.radius, this.y);
+        ctx.lineTo(this.x + this.radius, this.y);
+        ctx.moveTo(this.x, this.y - this.radius);
+        ctx.lineTo(this.x, this.y + this.radius);
+        ctx.stroke();
     }
 }

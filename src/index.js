@@ -6,8 +6,7 @@ const dpis = new DPIS(canvasId);
 
 // 示例图片列表
 const IMAGE_LIST = [
-    'Rhodes.png','dpis.png' ,'rainbow6.png', 'rhinelab.png', 'sanity.png',
-    'prts.png', 'kroos.png', 'white.png'
+    'Rhodes.png','dpis.png' ,'rainbow6.png', 'rhinelab.png', 'sanity.png', 'kroos.png', 'white.png'
 ];
 
 const DEFAULT_IMAGE = IMAGE_LIST[0];
@@ -123,7 +122,7 @@ function addImageToList(name, src) {
 
 // 控制面板
 function initControls() {
-    const controls = [
+    const rangeInputs = [
         { id: 'particleRadius', configName: 'particleRadius', valueId: 'particleRadiusValue' },
         { id: 'particleMassRange', configName: 'particleMassRange', valueId: 'particleMassRangeValue' },
         { id: 'repulsionRadius', configName: 'repulsionRadius', valueId: 'repulsionRadiusValue' },
@@ -135,31 +134,26 @@ function initControls() {
         { id: 'offsetAngle', configName: 'offsetAngle', valueId: 'offsetAngleValue' },
     ];
     
-    controls.forEach(control => {
-        const rangeInput = document.getElementById(control.id);
-        const valueDisplay = document.getElementById(control.valueId);
-        
-        if (!rangeInput) {
-            console.warn(`控制面板元素缺失: ${control.id}`);
-            return;
-        }
+    rangeInputs.forEach(param => {
+        const rangeInput = document.getElementById(param.id);
+        const valueDisplay = document.getElementById(param.valueId);
         
         // 初始化当前值显示
-        const currentValue = dpis[control.configName];
+        const currentValue = dpis[param.configName];
         if (valueDisplay && currentValue !== undefined) {
             valueDisplay.textContent = currentValue;
         }
         
-        // range输入条事件
+        // 事件监听
         rangeInput.addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
             if (valueDisplay) {
                 valueDisplay.textContent = value;
             }
             const config = {};
-            config[control.configName] = value;
+            config[param.configName] = value;
             dpis.updateConfig(config);
-            if (control.configName === 'particleInterval') {
+            if (param.configName === 'particleInterval') {
                 debounce(() => {
                     try {
                         dpis.loadAndBuildImage(dpis.image.src)
@@ -171,47 +165,39 @@ function initControls() {
         });
     });
 
-    // 力律选择
-    const valueDisplay = document.getElementById('forceLawValue');
-    const currentValue = dpis['forceLaw'];
-    if (valueDisplay && currentValue !== undefined) {
-        valueDisplay.textContent = currentValue;
-    }
-    const forceLawSelect = document.getElementById('forceLaw');
-    if (forceLawSelect) {
-        forceLawSelect.addEventListener('change', (e) => {
-            const selectedLaw = e.target.value;
-            const config = {};
-            config['forceLaw'] = selectedLaw;
-            dpis.updateConfig(config);
-            if (valueDisplay) {
-                valueDisplay.textContent = selectedLaw;
-            }
-        });
-    }
-
-    // 形状选择
-    const shapeSelect = document.getElementById('particleShape');
-    if (shapeSelect) {
-        shapeSelect.addEventListener('change', (e) => {
-            const selectedShape = e.target.value;
-            const config = {};
-            config['particleShape'] = selectedShape;
-            dpis.updateConfig(config);
-            if (valueDisplay) {
-                valueDisplay.textContent = selectedShape;
-            }
-        });
-    }
+    // 力律和形状的下拉选择
+    const selectors = [
+        { id: 'forceLaw', configName: 'forceLaw', valueId: 'forceLawValue' },
+        { id: 'particleShape', configName: 'particleShape', valueId: 'particleShapeValue' },
+    ];
+    
+    selectors.forEach(selector => {
+        const display = document.getElementById(selector.valueId);
+        const currentValue = dpis[selector.configName];
+        if (display && currentValue !== undefined) {
+            display.textContent = currentValue;
+        }
+        const select = document.getElementById(selector.id);
+        if (select) {
+            select.addEventListener('change', (e) => {
+                const selectedValue = e.target.value;
+                const config = {};
+                config[selector.configName] = selectedValue;
+                dpis.updateConfig(config);
+                if (display) {
+                    display.textContent = selectedValue;
+                }
+            });
+        }
+    });
 }
 
-
-// 防抖函数
+// 防抖函数（共享定时器，避免重复创建）
+let resizeTimer = null;
 function debounce(fn, delay) {
-    let timer = null;
     return function() {
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
             fn.apply(this, arguments);
         }, delay);
     };
@@ -245,11 +231,10 @@ function initPage() {
     });
 
     // 监听窗口大小变化（增加防抖）
-    const handleResize = debounce(() => {
+    const debouncedResize = debounce(() => {
         dpis.renew();
-    }, 250);
-
-    window.addEventListener('resize', handleResize);
+    }, 500);
+    window.addEventListener('resize', debouncedResize);
 }
 
 // 启动应用

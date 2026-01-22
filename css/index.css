@@ -44,8 +44,6 @@ body {
 /* 标题样式 */
 .app-header {
     width: 100%;
-    max-width: 95vw;
-    margin-bottom: 15px;
     position: relative;
 }
 
@@ -57,9 +55,8 @@ body {
 
 .app-title {
     margin: 0;
-    font-size: 24px;
-    font-weight: 400;
-    letter-spacing: 2px;
+    font-size: 20px;
+    font-weight: 200;
     color: var(--text-color);
     text-shadow: 0 0 10px rgba(var(--particle-light-rgb), 0.3);
     display: flex;
@@ -79,20 +76,22 @@ body {
 }
 
 .title-sub {
+    font-family: 'Courier New', Courier, monospace;
     font-size: 11px;
     font-weight: 200;
     color: var(--text-secondary);
     letter-spacing: 9px;
     /* margin-left: 40px; */
+    margin-top: 5px;
 }
 
 /* 导航链接样式 */
 .header-links {
     display: flex;
-    gap: 20px;
+    gap: 10px;
     white-space: nowrap;
     align-items: stretch;
-    margin-right: 20px;
+    /* margin-right: 20px; */
 }
 
 .header-link {
@@ -100,14 +99,14 @@ body {
     text-decoration: none;
     font-size: 13px;
     transition: all 0.2s ease;
-    padding: 4px 8px;
-    background-color: rgba(var(--text-secondary-rgb), 0.5);
-    border-radius: 8px;
+    padding: 2px 2px;
+    background-color: rgba(var(--text-secondary-rgb), 0.2);
+    border-radius: 2px;
 }
 
 .header-link img {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     object-fit: contain;
     display: block;
     border-radius: 4px;
@@ -123,13 +122,13 @@ body {
     width: 100%;
     background: linear-gradient(90deg, var(--particle-light), transparent);
     margin-top: 8px;
+    margin-bottom: 15px;
     opacity: 0.6;
 }
 
 /* 粒子组件 */
 .dpis-playground {
     width: 100%;
-    max-width: 95vw;
     flex: 1; /* 占据剩余空间 */
     display: flex;
     background: var(--component-bg);
@@ -201,7 +200,6 @@ body {
 .upload-icon {
     font-size: 40px;
     color: var(--text-secondary);
-    margin-bottom: 8px;
     transition: color 0.2s ease;
 }
 
@@ -367,6 +365,32 @@ input[type="range"]::-moz-range-thumb:hover {
     box-shadow: 0 0 12px rgba(var(--particle-light-rgb), 0.6);
 }
 
+.footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-height: 1rem;
+    width: 100%;
+    margin-top: 5px;
+    border-top: 1px solid rgba(var(--border-color-rgb), 0.5);
+}
+
+.footer-item {
+    font-size: 11px;
+    color: rgba(var(--text-secondary-rgb), 0.5);
+    white-space: nowrap;
+}
+
+.footer-item a {
+    color: rgba(var(--text-secondary-rgb), 0.5);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-item a:hover {
+    color: var(--particle-light);
+}
+
 /* 响应式适配 */
 @media (max-width: 768px) {
     body {
@@ -379,7 +403,7 @@ input[type="range"]::-moz-range-thumb:hover {
     }
 
     .app-title {
-        font-size: 20px;
+        font-size: 16px;
     }
 
     .app-title span {
@@ -391,15 +415,6 @@ input[type="range"]::-moz-range-thumb:hover {
         font-size: 9px;
         font-weight: 200;
         letter-spacing: 2px;
-    }
-
-    .header-links {
-        margin-right: 0px;
-    }
-    
-    .header-link img {
-        width: 15px;
-        height: 15px;
     }
 
     .dpis-playground {
