@@ -41,7 +41,8 @@ function renderImageList() {
                 dpis.loadAndBuildImage(dataUrl)
                     .then(() => {
                         // 上传成功后，将图片临时添加到列表（如果尚未在列表中）
-                        addImageToList(file.name, dataUrl);
+                        const trimmedName = file.name.length > 10 ? file.name.substring(0, 10) + '...' : file.name;
+                        addImageToList(trimmedName, dataUrl);
                     })
                     .catch(error => {
                         alert('图片加载失败: ' + error.message);

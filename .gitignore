@@ -2,3 +2,8 @@
 *.zip
 *.rar
 *.psd
+.*/
+nginx.conf
+docker-compose.yml
+Dockerfile
+.dockerignore

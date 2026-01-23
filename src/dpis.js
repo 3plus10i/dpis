@@ -73,10 +73,9 @@ export class DPIS {
         return a > 1;
     }
     
-    // 默认颜色过滤：二值化量化灰阶
+    // 默认颜色过滤：4级量化灰阶
     defaultFilterColor(r, g, b, a) {
-        let gray = (r + g + b) / 3;
-        gray = gray > 128 ? 223 : 64;
+        let gray = Math.floor((r + g + b) / 3 / 64) * 64;
         return `rgba(${gray}, ${gray}, ${gray}, 1)`;
     }
     
