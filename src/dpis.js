@@ -16,7 +16,7 @@ export class ParticleShape {
 
 // 动态粒子图像系统 - DPIS
 export class DPIS {
-    constructor(canvasId) {
+    constructor(canvasId, dpisAttrs = {}) {
         // 粒子群
         this._particles = [];
         this.activeNum = 0;
@@ -62,6 +62,8 @@ export class DPIS {
         // 时间跟踪
         this.lastTime = 0;
         this.maxDeltaTime = 1/30; // 最大时间步长，防止数值不稳定
+
+        this.updateConfig(dpisAttrs);
         
         // 初始化
         this.renew();
